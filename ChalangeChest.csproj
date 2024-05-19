@@ -1,0 +1,170 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')"/>
+    <PropertyGroup>
+        <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+        <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+        <ProjectGuid>{46BDCABE-BEB1-491F-8631-310F5186A3DB}</ProjectGuid>
+        <OutputType>Library</OutputType>
+        <AppDesignerFolder>Properties</AppDesignerFolder>
+        <RootNamespace>ChalangeChest</RootNamespace>
+        <AssemblyName>ChalangeChest</AssemblyName>
+        <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+        <FileAlignment>512</FileAlignment>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <LangVersion>latest</LangVersion>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+        <PlatformTarget>AnyCPU</PlatformTarget>
+        <DebugSymbols>true</DebugSymbols>
+        <DebugType>full</DebugType>
+        <Optimize>false</Optimize>
+        <OutputPath>bin\Debug\</OutputPath>
+        <DefineConstants>DEBUG;TRACE</DefineConstants>
+        <ErrorReport>prompt</ErrorReport>
+        <WarningLevel>4</WarningLevel>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+        <PlatformTarget>AnyCPU</PlatformTarget>
+        <DebugType>pdbonly</DebugType>
+        <Optimize>true</Optimize>
+        <OutputPath>bin\Release\</OutputPath>
+        <DefineConstants>TRACE</DefineConstants>
+        <ErrorReport>prompt</ErrorReport>
+        <WarningLevel>4</WarningLevel>
+    </PropertyGroup>
+    <ItemGroup>
+        <Reference Include="0Harmony">
+            <HintPath>..\..\..\Steam\steamapps\common\Valheim\BepInEx\core\0Harmony.dll</HintPath>
+        </Reference>
+        <Reference Include="assembly_guiutils">
+            <HintPath>..\Utils\assembly_guiutils_publicized.dll</HintPath>
+        </Reference>
+        <Reference Include="assembly_utils">
+            <HintPath>..\Utils\assembly_utils_publicized.dll</HintPath>
+        </Reference>
+        <Reference Include="assembly_valheim">
+            <HintPath>..\Utils\assembly_valheim_publicized.dll</HintPath>
+        </Reference>
+        <Reference Include="BepInEx">
+            <HintPath>..\..\..\Steam\steamapps\common\Valheim\BepInEx\core\BepInEx.dll</HintPath>
+        </Reference>
+        <Reference Include="ESP">
+          <HintPath>..\..\..\Steam\steamapps\common\Valheim\BepInEx\plugins\ESP.dll</HintPath>
+        </Reference>
+        <Reference Include="fastJSON">
+          <HintPath>..\Utils\fastJSON.dll</HintPath>
+        </Reference>
+        <Reference Include="JFUtils">
+            <HintPath>..\Utils\JFUtils.dll</HintPath>
+        </Reference>
+        <Reference Include="System"/>
+        <Reference Include="System.Core"/>
+        <Reference Include="System.Data"/>
+        <Reference Include="System.Xml"/>
+        <Reference Include="Unity.TextMeshPro">
+            <HintPath>..\..\..\Steam\steamapps\common\Valheim\valheim_Data\Managed\Unity.TextMeshPro.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEditor">
+            <HintPath>..\..\Unity\Unity Hub\versions\2020.3.36f1\Editor\Data\Managed\UnityEngine\UnityEditor.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEditor.CoreModule">
+            <HintPath>..\..\Unity\Unity Hub\versions\2020.3.36f1\Editor\Data\Managed\UnityEngine\UnityEditor.CoreModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine">
+            <HintPath>..\..\Unity\Unity Hub\versions\2020.3.36f1\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.AnimationModule">
+            <HintPath>..\..\Unity\Unity Hub\versions\2020.3.36f1\Editor\Data\Managed\UnityEngine\UnityEngine.AnimationModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.AssetBundleModule">
+            <HintPath>..\..\Unity\Unity Hub\versions\2020.3.36f1\Editor\Data\Managed\UnityEngine\UnityEngine.AssetBundleModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.AudioModule">
+            <HintPath>..\..\Unity\Unity Hub\versions\2020.3.36f1\Editor\Data\Managed\UnityEngine\UnityEngine.AudioModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.CoreModule">
+            <HintPath>..\..\Unity\Unity Hub\versions\2020.3.36f1\Editor\Data\Managed\UnityEngine\UnityEngine.CoreModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.IMGUIModule">
+            <HintPath>..\..\Unity\Unity Hub\versions\2020.3.36f1\Editor\Data\Managed\UnityEngine\UnityEngine.IMGUIModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.InputLegacyModule">
+            <HintPath>..\..\Unity\Unity Hub\versions\2020.3.36f1\Editor\Data\Managed\UnityEngine\UnityEngine.InputLegacyModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.ParticleSystemModule">
+            <HintPath>..\..\Unity\Unity Hub\versions\2020.3.36f1\Editor\Data\Managed\UnityEngine\UnityEngine.ParticleSystemModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.PhysicsModule">
+            <HintPath>..\..\Unity\Unity Hub\versions\2020.3.36f1\Editor\Data\Managed\UnityEngine\UnityEngine.PhysicsModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.TextCoreModule">
+            <HintPath>..\..\Unity\Unity Hub\versions\2020.3.36f1\Editor\Data\Managed\UnityEngine\UnityEngine.TextCoreModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.TextRenderingModule">
+            <HintPath>..\..\Unity\Unity Hub\versions\2020.3.36f1\Editor\Data\Managed\UnityEngine\UnityEngine.TextRenderingModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.UI">
+            <HintPath>..\..\..\Steam\steamapps\common\Valheim\valheim_Data\Managed\UnityEngine.UI.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.UnityWebRequestTextureModule">
+            <HintPath>..\..\Unity\Unity Hub\versions\2020.3.36f1\Editor\Data\Managed\UnityEngine\UnityEngine.UnityWebRequestTextureModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.VirtualTexturingModule">
+            <HintPath>..\..\Unity\Unity Hub\versions\2020.3.36f1\Editor\Data\Managed\UnityEngine\UnityEngine.VirtualTexturingModule.dll</HintPath>
+        </Reference>
+        <Reference Include="YamlDotNet, Version=15.0.0.0, Culture=neutral, PublicKeyToken=ec19458f3c15af5e, processorArchitecture=MSIL">
+            <HintPath>packages\YamlDotNet.15.1.2\lib\net47\YamlDotNet.dll</HintPath>
+        </Reference>
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Include="Compatibility\ESP\espApi.cs" />
+        <Compile Include="Difficulty.cs" />
+        <Compile Include="DifficultyModifyer.cs" />
+        <Compile Include="EventData.cs" />
+        <Compile Include="GlobalUsings.cs"/>
+        <Compile Include="Managers\LocalizationManager.cs"/>
+        <Compile Include="Patch\ConfigureStaff.cs" />
+        <Compile Include="Patch\InvokeEventPeriodically.cs" />
+        <Compile Include="Patch\RegisterPrefabs.cs" />
+        <Compile Include="Patch\ShowOnMap.cs" />
+        <Compile Include="Patch\UpdateEventLifecycle.cs" />
+        <Compile Include="Plugin.cs"/>
+        <Compile Include="Properties\AssemblyInfo.cs"/>
+        <Compile Include="TerminalCommands.cs" />
+        <Compile Include="UnityScripts\ActivateChalange.cs" />
+    </ItemGroup>
+    <ItemGroup>
+        <None Include="App.config"/>
+        <None Include="packages.config"/>
+    </ItemGroup>
+    <ItemGroup>
+        <Content Include="ILRepack.targets"/>
+        <Content Include="README.md"/>
+        <EmbeddedResource Include="translations\English.yml">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </EmbeddedResource>
+        <EmbeddedResource Include="translations\Russian.yml">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </EmbeddedResource>
+    </ItemGroup>
+    <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
+    <Target Name="CopyDLL" AfterTargets="ILRepack">
+        <Copy SourceFiles="$(TargetDir)$(ProjectName).dll" DestinationFolder="D:\Slava\Coding\_Publish\Frogger-$(ProjectName)"/>
+        <Copy SourceFiles="$(TargetDir)$(ProjectName).dll" DestinationFolder="D:\Steam\steamapps\common\Valheim\BepInEx\plugins"/>
+        <Message Importance="High" Text="Copied $(ProjectName).dll to D:\Slava\Coding\_Publish\Frogger-$(ProjectName) and D:\Steam\steamapps\common\Valheim\BepInEx\plugins"/>
+    </Target>
+    <Target Name="CopyReadme" AfterTargets="CopyDLL">
+        <Copy SourceFiles="$(ProjectDir)README.md" DestinationFolder="D:\Slava\Coding\_Publish\Frogger-$(ProjectName)"/>
+        <Message Importance="High" Text="Copied README.md to D:\Slava\Coding\_Publish\Frogger-$(ProjectName)"/>
+    </Target>
+    <Import Project="packages\ILRepack.Lib.MSBuild.Task.2.0.18.2\build\ILRepack.Lib.MSBuild.Task.targets" Condition="Exists('packages\ILRepack.Lib.MSBuild.Task.2.0.18.2\build\ILRepack.Lib.MSBuild.Task.targets')"/>
+    <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+        <PropertyGroup>
+            <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them. For more information, see http://go.microsoft.com/fwlink/?LinkID=322105.The missing file is {0}.</ErrorText>
+        </PropertyGroup>
+        <Error Condition="!Exists('packages\ILRepack.Lib.MSBuild.Task.2.0.18.2\build\ILRepack.Lib.MSBuild.Task.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\ILRepack.Lib.MSBuild.Task.2.0.18.2\build\ILRepack.Lib.MSBuild.Task.targets'))"/>
+    </Target>
+
+</Project>

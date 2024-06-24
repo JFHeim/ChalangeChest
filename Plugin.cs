@@ -1,7 +1,6 @@
 ﻿using BepInEx;
 using ChallengeChest.Managers.LocalizationManager;
 using ChallengeChest.Patch;
-using ChallengeChest.UnityScripts;
 
 namespace ChallengeChest;
 
@@ -21,7 +20,6 @@ internal class Plugin : BaseUnityPlugin
         TheConfig.Init();
 
         RegisterPrefabs.LoadAll();
-        RegisterPrefabs.Prefab("cc_ActivateChallenge").GetOrAddComponent<ActivateChallenge>();
         bundle.Unload(false);
         EventSetup.Init();
         EventSpawn.Init();

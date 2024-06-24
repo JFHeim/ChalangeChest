@@ -112,12 +112,8 @@
         <Reference Include="SoftReferenceableAssets" Publicize="true">
             <HintPath>$(VALHEIM_INSTALL)/valheim_Data\Managed\SoftReferenceableAssets.dll</HintPath>
         </Reference>
-
         <Reference Include="JFUtils">
             <HintPath>../Utils/JFUtils.dll</HintPath>
-        </Reference>
-        <Reference Include="JFUtils">
-            <HintPath>../Utils/fastJSON.dll</HintPath>
         </Reference>
     </ItemGroup>
 
@@ -127,6 +123,24 @@
 
     <ItemGroup>
         <None Remove="kiln" />
+        <None Remove=".gitignore" />
+        <None Remove=".gitattributes" />
+        <None Remove="LICENSE" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="challengechest" />
+      <EmbeddedResource Include="challengechest">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="translations\English.yml" />
+      <EmbeddedResource Include="translations\English.yml">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="translations\Russian.yml" />
+      <EmbeddedResource Include="translations\Russian.yml">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
     </ItemGroup>
 
     <Target Name="CopyDLL" AfterTargets="ILRepack">

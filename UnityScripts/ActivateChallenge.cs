@@ -1,6 +1,6 @@
 ﻿namespace ChallengeChest.UnityScripts;
 
-public class ActivateChalange : MonoBehaviour, Hoverable, Interactable
+public class ActivateChallenge : MonoBehaviour, Hoverable, Interactable
 {
     public string GetHoverText() => $"{ModName}_ActivateChalange".Localize();
 

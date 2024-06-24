@@ -1,4 +1,4 @@
-﻿namespace ChalangeChest.UnityScripts;
+﻿namespace ChallengeChest.UnityScripts;
 
 public class ActivateChalange : MonoBehaviour, Hoverable, Interactable
 {

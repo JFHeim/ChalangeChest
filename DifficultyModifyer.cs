@@ -1,30 +1,30 @@
-﻿namespace ChalangeChest;
+﻿namespace ChallengeChest;
 
 [Serializable]
 public class DifficultyModifyer
 {
-    public List<MonsterMod> monsters = [];
+    public List<MonsterMod> Monsters = [];
     public List<string> bannedMonsters = [];
 
     public class MonsterMod
     {
-        public string name;
-        public float? spawnChance;
-        public float? countMin;
-        public float? countMax;
-        public float? starChance;
-        public float? star2Chance;
+        public string Name;
+        public float? SpawnChance;
+        public float? CountMin;
+        public float? CountMax;
+        public float? StarChance;
+        public float? Star2Chance;
         public MonsterMod() { }
 
         public MonsterMod(string name, float? spawnCh = null, float? min = null, float? max = null,
             float? starCh = null, float? star2Ch = null)
         {
-            this.name = name;
-            this.spawnChance = spawnCh;
-            this.countMin = min;
-            this.countMax = max;
-            this.starChance = starCh;
-            this.star2Chance = star2Ch;
+            Name = name;
+            SpawnChance = spawnCh;
+            CountMin = min;
+            CountMax = max;
+            StarChance = starCh;
+            Star2Chance = star2Ch;
         }
     }
 }

@@ -1,10 +1,10 @@
 ﻿using System.Reflection;
 
-[assembly: AssemblyTitle("ChalangeChest")]
+[assembly: AssemblyTitle("ChallengeChest")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("JustAFrogger")]
-[assembly: AssemblyProduct("ChalangeChest")]
+[assembly: AssemblyProduct("ChallengeChest")]
 [assembly: AssemblyCopyright("Copyright ©  2023")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

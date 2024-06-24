@@ -1,12 +1,12 @@
 ﻿using HarmonyLib;
 
-namespace ChalangeChest.Patch;
+namespace ChallengeChest.Patch;
 
 [HarmonyPatch, HarmonyWrapSafe]
 public class ShowOnMap
 {
-    public static bool needsUpdate = false;
-    private static List<(Minimap.PinData, Minimap.PinData)> eventPins = new();
+    public static bool needsUpdate;
+    private static List<(Minimap.PinData, Minimap.PinData)> _eventPins = [];
 
     [HarmonyPatch(typeof(Minimap), nameof(Minimap.UpdateEventPin))]
     [HarmonyPostfix]
@@ -15,20 +15,20 @@ public class ShowOnMap
         if (needsUpdate == false) return;
         needsUpdate = false;
 
-        foreach (var (pin, areaPin) in eventPins)
+        foreach (var (pin, areaPin) in _eventPins)
         {
             __instance.RemovePin(pin);
             __instance.RemovePin(areaPin);
         }
 
-        eventPins.Clear();
+        _eventPins.Clear();
 
         foreach (var eventData in currentEvents)
         {
-            var pos = eventData.pos;
+            var pos = eventData.Pos;
             var areaPin = __instance.AddPin(pos, Minimap.PinType.EventArea, "", false, false);
             var pin = __instance.AddPin(pos, Minimap.PinType.RandomEvent, "", false, false);
-            eventPins.Add((pin, areaPin));
+            _eventPins.Add((pin, areaPin));
         }
     }
 }

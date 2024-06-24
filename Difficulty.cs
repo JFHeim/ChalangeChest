@@ -1,4 +1,4 @@
-﻿namespace ChalangeChest;
+﻿namespace ChallengeChest;
 
 public enum Difficulty
 {

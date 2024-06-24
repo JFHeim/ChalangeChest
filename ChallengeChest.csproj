@@ -1,0 +1,137 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <VALHEIM_INSTALL>/home/jf/.local/share/Steam/steamapps/common/Valheim/</VALHEIM_INSTALL>
+        <BEPINEX_PATH>/home/jf/.local/share/Steam/steamapps/common/Valheim/BepInEx/</BEPINEX_PATH>
+
+        <TargetFramework>net48</TargetFramework>
+        <RootNamespace>ChallengeChest</RootNamespace>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>disable</Nullable>
+
+        <Company>JustAFrogger</Company>
+        <Product>ChallengeChest</Product>
+        <NeutralLanguage>ru</NeutralLanguage>
+
+        <!-- Assembly Attributes -->
+        <AssemblyTitle>$(Product)</AssemblyTitle>
+        <AssemblyDescription>todo.</AssemblyDescription>
+        <AssemblyConfiguration>Release</AssemblyConfiguration>
+        <AssemblyCompany>$(Company)</AssemblyCompany>
+        <AssemblyProduct>$(Product)</AssemblyProduct>
+        <AssemblyCopyright>Copyright © 2022</AssemblyCopyright>
+        <AssemblyCulture>$(NeutralLanguage)</AssemblyCulture>
+
+        <!-- ComVisible and Guid -->
+        <ComVisible>false</ComVisible>
+        <Guid>1b9e3c4f-7b7e-4b5e-8b9e-4b5e7b7e4b5e</Guid>
+
+        <!-- Version Information -->
+        <Version>1.0.0</Version>
+        <FileVersion>$(Version)</FileVersion>
+        <AssemblyVersion>$(Version)</AssemblyVersion>
+
+        <!-- Custom IgnoresAccessChecksToAttribute -->
+        <IgnoresAccessChecksToAttributes>
+            assembly_guiutils;assembly_utils;assembly_valheim
+        </IgnoresAccessChecksToAttributes>
+        <LangVersion>default</LangVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.2">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="HarmonyX" Version="2.9.0"/>
+        <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.33">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="System.ValueTuple" Version="4.5.0"/>
+        <PackageReference Include="YamlDotNet" Version="15.1.6"/>
+
+        <Reference Include="BepInEx">
+            <HintPath>$(BEPINEX_PATH)/core/BepInEx.dll</HintPath>
+        </Reference>
+        <Reference Include="BepInEx">
+            <HintPath>$(BEPINEX_PATH)/plugins\ESP.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine">
+            <HintPath>$(VALHEIM_INSTALL)/valheim_Data/Managed/UnityEngine.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.AnimationModule">
+            <HintPath>$(VALHEIM_INSTALL)/valheim_Data\Managed\UnityEngine.AnimationModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.AssetBundleModule">
+            <HintPath>$(VALHEIM_INSTALL)/valheim_Data/Managed/UnityEngine.AssetBundleModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.AudioModule">
+            <HintPath>$(VALHEIM_INSTALL)valheim_Data\Managed\UnityEngine.AudioModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.CoreModule">
+            <HintPath>$(VALHEIM_INSTALL)/valheim_Data/Managed/UnityEngine.CoreModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.ImageConversionModule">
+            <HintPath>$(VALHEIM_INSTALL)valheim_Data\Managed\UnityEngine.ImageConversionModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.IMGUIModule">
+            <HintPath>$(VALHEIM_INSTALL)/valheim_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.InputLegacyModule">
+            <HintPath>$(VALHEIM_INSTALL)valheim_Data\Managed\UnityEngine.InputLegacyModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.ParticleSystemModule">
+            <HintPath>$(VALHEIM_INSTALL)/valheim_Data/Managed/UnityEngine.ParticleSystemModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.Physics2DModule">
+            <HintPath>$(VALHEIM_INSTALL)/valheim_Data/Managed/UnityEngine.Physics2DModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.PhysicsModule">
+            <HintPath>$(VALHEIM_INSTALL)/valheim_Data/Managed/UnityEngine.PhysicsModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.UI">
+            <HintPath>$(VALHEIM_INSTALL)/valheim_Data/Managed/UnityEngine.UI.dll</HintPath>
+        </Reference>
+        <Reference Include="Unity.TextMeshPro">
+            <HintPath>$(VALHEIM_INSTALL)/valheim_Data/Managed/Unity.TextMeshPro.dll</HintPath>
+        </Reference>
+
+        <Reference Include="assembly_valheim" Publicize="true">
+            <HintPath>$(VALHEIM_INSTALL)/valheim_Data/Managed/assembly_valheim.dll</HintPath>
+        </Reference>
+        <Reference Include="assembly_utils" Publicize="true">
+            <HintPath>$(VALHEIM_INSTALL)/valheim_Data/Managed/assembly_utils.dll</HintPath>
+        </Reference>
+        <Reference Include="assembly_guiutils" Publicize="true">
+            <HintPath>$(VALHEIM_INSTALL)/valheim_Data/Managed/assembly_guiutils.dll</HintPath>
+        </Reference>
+        <Reference Include="SoftReferenceableAssets" Publicize="true">
+            <HintPath>$(VALHEIM_INSTALL)/valheim_Data\Managed\SoftReferenceableAssets.dll</HintPath>
+        </Reference>
+
+        <Reference Include="JFUtils">
+            <HintPath>../Utils/JFUtils.dll</HintPath>
+        </Reference>
+        <Reference Include="JFUtils">
+            <HintPath>../Utils/fastJSON.dll</HintPath>
+        </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Folder Include="Properties/"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Remove="kiln" />
+    </ItemGroup>
+
+    <Target Name="CopyDLL" AfterTargets="ILRepack">
+        <Copy SourceFiles="$(TargetDir)$(ProjectName).dll" DestinationFolder="../_Publish/Frogger-$(ProjectName)"/>
+        <Copy SourceFiles="$(TargetDir)$(ProjectName).dll" DestinationFolder="$(BEPINEX_PATH)/plugins"/>
+        <Message Importance="high" Text="Copied $(ProjectName).dll to ../_Publish and $(BEPINEX_PATH)plugins"/>
+    </Target>
+</Project>

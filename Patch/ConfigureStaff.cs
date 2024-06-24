@@ -1,6 +1,6 @@
 ﻿using HarmonyLib;
 
-namespace ChalangeChest.Patch;
+namespace ChallengeChest.Patch;
 
 [HarmonyPatch, HarmonyWrapSafe]
 public static class ConfigureStaff
@@ -24,9 +24,9 @@ public static class ConfigureStaff
 
     private static void Normal()
     {
-        var chest = eventPrefabs[Difficulty.Normal].transform.FindChildByName("SucsessChest").GetComponent<Container>();
+        Container chest = eventPrefabs[Difficulty.Normal].transform.FindChildByName("SucsessChest").GetComponent<Container>();
         SetBkg(chest);
-        chest.m_defaultItems.m_drops = new();
+        chest.m_defaultItems.m_drops = [];
         chest.AddDrop("Ruby", 1, 8);
         chest.AddDrop("Sausages", 0, 4);
         chest.AddDrop("SurtlingCore", 0, 2);
@@ -36,7 +36,7 @@ public static class ConfigureStaff
 
     private static void Good()
     {
-        var chest = eventPrefabs[Difficulty.Good].transform.FindChildByName("SucsessChest").GetComponent<Container>();
+        Container chest = eventPrefabs[Difficulty.Good].transform.FindChildByName("SucsessChest").GetComponent<Container>();
         SetBkg(chest);
         chest.AddDrop("Ruby", 3, 12);
         chest.AddDrop("Sausages", 0, 4);
@@ -47,7 +47,7 @@ public static class ConfigureStaff
 
     private static void Impossible()
     {
-        var chest = eventPrefabs[Difficulty.Impossible].transform.FindChildByName("SucsessChest")
+        Container chest = eventPrefabs[Difficulty.Impossible].transform.FindChildByName("SucsessChest")
             .GetComponent<Container>();
         SetBkg(chest);
         chest.AddDrop("Ruby", 7, 25);
@@ -61,8 +61,8 @@ static class Extension
 {
     public static Container AddDrop(this Container chest, string name, int min, int max)
     {
-        chest.m_defaultItems.m_drops ??= new();
-        chest.m_defaultItems.m_drops.Add(new()
+        chest.m_defaultItems.m_drops ??= [];
+        chest.m_defaultItems.m_drops.Add(new DropTable.DropData
         {
             m_item = ZNetScene.instance.GetPrefab(name),
             m_stackMin = min,

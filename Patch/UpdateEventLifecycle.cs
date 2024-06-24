@@ -1,8 +1,7 @@
-﻿using ChalangeChest.Compatibility.ESP;
-using fastJSON;
+﻿using ChallengeChest.Compatibility.ESP;
 using HarmonyLib;
 
-namespace ChalangeChest.Patch;
+namespace ChallengeChest.Patch;
 
 [HarmonyPatch, HarmonyWrapSafe]
 public class UpdateEventLifecycle
@@ -11,7 +10,7 @@ public class UpdateEventLifecycle
     [HarmonyPostfix]
     private static void FixedUpdate()
     {
-        float dt = Time.fixedDeltaTime;
+        var dt = Time.fixedDeltaTime;
         if (!ZNet.instance.IsServer()) return;
 
         foreach (var eventData in currentEvents)
@@ -25,7 +24,7 @@ public class UpdateEventLifecycle
             }
         }
 
-        if (espApi.IsLoaded())
+        if (EspApi.IsLoaded())
         {
             foreach (var eventData in currentEvents)
             {

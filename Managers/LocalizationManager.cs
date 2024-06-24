@@ -1,28 +1,31 @@
-﻿using System.IO;
+﻿#nullable enable
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Text;
 using BepInEx;
+using BepInEx.Bootstrap;
 using BepInEx.Configuration;
 using HarmonyLib;
 using YamlDotNet.Serialization;
+using Debug = UnityEngine.Debug;
 
-#nullable enable
-namespace ChalangeChest.LocalizationManager;
+// ReSharper disable once CheckNamespace
+namespace ChallengeChest.Managers.LocalizationManager;
 
 [PublicAPI]
 public class Localizer
 {
     private static readonly Dictionary<string, Dictionary<string, Func<string>>> PlaceholderProcessors = new();
 
-    private static readonly Dictionary<string, Dictionary<string, string>> loadedTexts = new();
+    private static readonly Dictionary<string, Dictionary<string, string>> LoadedTexts = new();
 
-    private static readonly ConditionalWeakTable<Localization, string> localizationLanguage = new();
+    private static readonly ConditionalWeakTable<Localization, string> LocalizationLanguage = new();
 
-    private static readonly List<WeakReference<Localization>> localizationObjects = [];
+    private static readonly List<WeakReference<Localization>> LocalizationObjects = [];
 
     private static BaseUnityPlugin? _plugin;
 
-    private static BaseUnityPlugin plugin
+    private static BaseUnityPlugin Plugin
     {
         get
         {
@@ -38,7 +41,7 @@ public class Localizer
                     types = e.Types.Where(t => t != null).Select(t => t.GetTypeInfo());
                 }
 
-                _plugin = (BaseUnityPlugin)BepInEx.Bootstrap.Chainloader.ManagerObject.GetComponent(types.First(t =>
+                _plugin = (BaseUnityPlugin)Chainloader.ManagerObject.GetComponent(types.First(t =>
                     t.IsClass && typeof(BaseUnityPlugin).IsAssignableFrom(t)));
             }
 
@@ -46,13 +49,13 @@ public class Localizer
         }
     }
 
-    private static readonly List<string> fileExtensions = [".json", ".yml"];
+    private static readonly List<string> FileExtensions = [".json", ".yml"];
 
     private static void UpdatePlaceholderText(Localization localization, string key)
     {
-        localizationLanguage.TryGetValue(localization, out string language);
-        string text = loadedTexts[language][key];
-        if (PlaceholderProcessors.TryGetValue(key, out Dictionary<string, Func<string>> textProcessors))
+        LocalizationLanguage.TryGetValue(localization, out var language);
+        var text = LoadedTexts[language][key];
+        if (PlaceholderProcessors.TryGetValue(key, out var textProcessors))
         {
             text = textProcessors.Aggregate(text, (current, kv) => current.Replace("{" + kv.Key + "}", kv.Value()));
         }
@@ -76,7 +79,7 @@ public class Localizer
         }
 
         config.SettingChanged += (_, _) => UpdatePlaceholder();
-        if (loadedTexts.ContainsKey(Localization.instance.GetSelectedLanguage()))
+        if (LoadedTexts.ContainsKey(Localization.instance.GetSelectedLanguage()))
         {
             UpdatePlaceholder();
         }
@@ -85,11 +88,11 @@ public class Localizer
     public static void AddText(string key, string text)
     {
         List<WeakReference<Localization>> remove = [];
-        foreach (WeakReference<Localization> reference in localizationObjects)
+        foreach (var reference in LocalizationObjects)
         {
-            if (reference.TryGetTarget(out Localization localization))
+            if (reference.TryGetTarget(out var localization))
             {
-                Dictionary<string, string> texts = loadedTexts[localizationLanguage.GetOrCreateValue(localization)];
+                var texts = LoadedTexts[LocalizationLanguage.GetOrCreateValue(localization)];
                 if (!localization.m_translations.ContainsKey(key))
                 {
                     texts[key] = text;
@@ -101,9 +104,9 @@ public class Localizer
             }
         }
 
-        foreach (WeakReference<Localization> reference in remove)
+        foreach (var reference in remove)
         {
-            localizationObjects.Remove(reference);
+            LocalizationObjects.Remove(reference);
         }
     }
 
@@ -111,24 +114,24 @@ public class Localizer
 
     private static void LoadLocalization(Localization __instance, string language)
     {
-        if (!localizationLanguage.Remove(__instance))
+        if (!LocalizationLanguage.Remove(__instance))
         {
-            localizationObjects.Add(new WeakReference<Localization>(__instance));
+            LocalizationObjects.Add(new WeakReference<Localization>(__instance));
         }
 
-        localizationLanguage.Add(__instance, language);
+        LocalizationLanguage.Add(__instance, language);
 
         Dictionary<string, string> localizationFiles = new();
-        foreach (string file in Directory
-                     .GetFiles(Path.GetDirectoryName(Paths.PluginPath)!, $"{plugin.Info.Metadata.Name}.*",
-                         SearchOption.AllDirectories).Where(f => fileExtensions.IndexOf(Path.GetExtension(f)) >= 0))
+        foreach (var file in Directory
+                     .GetFiles(Path.GetDirectoryName(Paths.PluginPath)!, $"{Plugin.Info.Metadata.Name}.*",
+                         SearchOption.AllDirectories).Where(f => FileExtensions.IndexOf(Path.GetExtension(f)) >= 0))
         {
-            string key = Path.GetFileNameWithoutExtension(file).Split('.')[1];
+            var key = Path.GetFileNameWithoutExtension(file).Split('.')[1];
             if (localizationFiles.ContainsKey(key))
             {
                 // Handle duplicate key
-                UnityEngine.Debug.LogWarning(
-                    $"Duplicate key {key} found for {plugin.Info.Metadata.Name}. The duplicate file found at {file} will be skipped.");
+                Debug.LogWarning(
+                    $"Duplicate key {key} found for {Plugin.Info.Metadata.Name}. The duplicate file found at {file} will be skipped.");
             } else
             {
                 localizationFiles[key] = file;
@@ -138,46 +141,46 @@ public class Localizer
         if (LoadTranslationFromAssembly("English") is not { } englishAssemblyData)
         {
             throw new Exception(
-                $"Found no English localizations in mod {plugin.Info.Metadata.Name}. Expected an embedded resource translations/English.json or translations/English.yml.");
+                $"Found no English localizations in mod {Plugin.Info.Metadata.Name}. Expected an embedded resource translations/English.json or translations/English.yml.");
         }
 
-        Dictionary<string, string>? localizationTexts = new DeserializerBuilder().IgnoreFields().Build()
-            .Deserialize<Dictionary<string, string>?>(System.Text.Encoding.UTF8.GetString(englishAssemblyData));
+        var localizationTexts = new DeserializerBuilder().IgnoreFields().Build()
+            .Deserialize<Dictionary<string, string>?>(Encoding.UTF8.GetString(englishAssemblyData));
         if (localizationTexts is null)
         {
             throw new Exception(
-                $"Localization for mod {plugin.Info.Metadata.Name} failed: Localization file was empty.");
+                $"Localization for mod {Plugin.Info.Metadata.Name} failed: Localization file was empty.");
         }
 
         string? localizationData = null;
         if (language != "English")
         {
-            if (localizationFiles.ContainsKey(language))
+            if (localizationFiles.TryGetValue(language, out var file))
             {
-                localizationData = File.ReadAllText(localizationFiles[language]);
+                localizationData = File.ReadAllText(file);
             } else if (LoadTranslationFromAssembly(language) is { } languageAssemblyData)
             {
-                localizationData = System.Text.Encoding.UTF8.GetString(languageAssemblyData);
+                localizationData = Encoding.UTF8.GetString(languageAssemblyData);
             }
         }
 
-        if (localizationData is null && localizationFiles.ContainsKey("English"))
+        if (localizationData is null && localizationFiles.TryGetValue("English", out var localizationFile))
         {
-            localizationData = File.ReadAllText(localizationFiles["English"]);
+            localizationData = File.ReadAllText(localizationFile);
         }
 
         if (localizationData is not null)
         {
-            foreach (KeyValuePair<string, string> kv in new DeserializerBuilder().IgnoreFields().Build()
-                                                            .Deserialize<Dictionary<string, string>?>(localizationData)
-                                                        ?? new Dictionary<string, string>())
+            foreach (var kv in new DeserializerBuilder().IgnoreFields().Build()
+                                   .Deserialize<Dictionary<string, string>?>(localizationData)
+                               ?? new Dictionary<string, string>())
             {
                 localizationTexts[kv.Key] = kv.Value;
             }
         }
 
-        loadedTexts[language] = localizationTexts;
-        foreach (KeyValuePair<string, string> s in localizationTexts)
+        LoadedTexts[language] = localizationTexts;
+        foreach (var s in localizationTexts)
         {
             UpdatePlaceholderText(__instance, s.Key);
         }
@@ -192,7 +195,7 @@ public class Localizer
 
     private static byte[]? LoadTranslationFromAssembly(string language)
     {
-        foreach (string extension in fileExtensions)
+        foreach (var extension in FileExtensions)
         {
             if (ReadEmbeddedFileBytes("translations." + language + extension) is { } data)
             {

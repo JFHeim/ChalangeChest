@@ -80,18 +80,9 @@ public class EventSpawn
         }, pos with { y = despawnTime }, true);
 
         Debug("SpawnBoss 4");
-        // var zdo = ZDOMan.instance.CreateNewZDO(pos, difficulty.PrefabHashCode());
-        // Debug("SpawnBoss 5");
-        // zdo.SetPrefab(difficulty.PrefabHashCode());
-        // zdo.Persistent = true;
-        // zdo.Set("ChallengeChestTime", despawnTime);
-
         SpawnEventLocation(pos, difficulty, despawnTime);
-
         Debug("SpawnBoss 5");
-
         _lastBossSpawn = ZNet.instance.GetTime();
-
         Debug("SpawnBoss 6");
         BroadcastMinimapUpdate();
         Debug("SpawnBoss finish");
@@ -160,7 +151,7 @@ public class EventSpawn
         return null;
     }
 
-    public static void HandleChallengeDone(Vector2i sector)
+    public static async void HandleChallengeDone(Vector2i sector)
     {
         Debug($"HandleChallengeDone 0 {sector}");
         if (ZoneSystem.instance.m_locationInstances.TryGetValue(sector, out var location)
@@ -170,12 +161,81 @@ public class EventSpawn
             return;
         }
 
-        Debug($"HandleChallengeDone 1");
-
         ZoneSystem.instance.m_locationInstances.Remove(sector);
-        Debug($"HandleChallengeDone 2");
+
+        var zdos = await ZoneSystem.instance.GetWorldObjectsAsync(zdo =>
+            zdo.GetLong("ChallengeChestTime", -1L) != -1L);
+        foreach (var zdo in zdos)
+        {
+            ZDOMan.instance.CreateNewZDO(zdo.GetPosition(), "vfx_Place_workbench".GetStableHashCode());
+            ZDOMan.instance.DestroyZDO(zdo);
+        }
+
+        var position = new Vector3(location.m_position.x,
+            WorldGenerator.instance.GetHeight(location.m_position.x, location.m_position.z), location.m_position.z);
+        var chest = ZDOMan.instance.CreateNewZDO(position, "cc_SuccessChest_normal".GetStableHashCode());
+        chest.SetPrefab("cc_SuccessChest_normal".GetStableHashCode());
+        chest.SetPosition(position);
+        ZDOMan.instance.CreateNewZDO(chest.GetPosition(), "vfx_Place_workbench".GetStableHashCode());
+        PopulateChest(chest, location.m_location.m_prefabName.GetDifficultyFromPrefab());
+        SnapToGround.SnappAll();
+
         BroadcastMinimapUpdate();
         Debug($"HandleChallengeDone finish");
+    }
+
+    private static void PopulateChest(ZDO zdo, Difficulty difficulty)
+    {
+        var prefab = ZNetScene.instance.GetPrefab(zdo.GetPrefab())?.GetComponent<Container>();
+        if (!prefab)
+        {
+            DebugError("Could not find prefab " + zdo.GetPrefab());
+            return;
+        }
+
+        zdo.Set(ZDOVars.s_addedDefaultItems, true);
+        Inventory inventory;
+        GenerateItems();
+        var pkg = new ZPackage();
+        inventory.Save(pkg);
+        var base64 = pkg.GetBase64();
+        zdo.Set(ZDOVars.s_items, base64);
+        return;
+
+        void GenerateItems()
+        {
+            inventory = new Inventory(prefab.m_name, prefab.m_bkg, prefab.m_width, prefab.m_height);
+            switch (difficulty)
+            {
+                case Difficulty.Normal:
+                    foreach (var drop in new SerializedDrops(ItemsNormal.Value).Items)
+                    {
+                        if (Random.value > drop.ChanceToDropAny) continue;
+                        var itemPrefab = ObjectDB.instance.GetItemPrefab(drop.ItemName);
+                        if (!itemPrefab)
+                        {
+                            DebugWarning($"Failed to find item '{drop.ItemName}'");
+                            continue;
+                        }
+
+                        if (drop.AmountMin < 1)
+                        {
+                            DebugWarning($"Invalid min amount '{drop.AmountMin}' for '{drop.ItemName}'");
+                            continue;
+                        }
+
+                        if (drop.AmountMax < 1)
+                        {
+                            DebugWarning($"Invalid max amount '{drop.AmountMax}' for '{drop.ItemName}'");
+                            continue;
+                        }
+
+                        inventory.AddItem(itemPrefab, Random.Range(drop.AmountMin, drop.AmountMax + 1));
+                    }
+
+                    break;
+            }
+        }
     }
 
     public static void SpawnEventLocation(Vector3 pos, Difficulty difficulty, long despawnTime)

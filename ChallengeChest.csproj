@@ -119,6 +119,7 @@
 
     <ItemGroup>
         <Folder Include="Properties/"/>
+        <Folder Include="UnityScripts\" />
     </ItemGroup>
 
     <ItemGroup>
@@ -142,6 +143,7 @@
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </EmbeddedResource>
     </ItemGroup>
+
 
     <Target Name="CopyDLL" AfterTargets="ILRepack">
         <Copy SourceFiles="$(TargetDir)$(ProjectName).dll" DestinationFolder="../_Publish/Frogger-$(ProjectName)"/>

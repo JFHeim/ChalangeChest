@@ -58,10 +58,9 @@ file static class SpawnBossCheck
 
         IEnumerator Check()
         {
-            while (true)
+            while (ZoneSystem.instance)
             {
-                if (!ZoneSystem.instance) yield break;
-
+                Debug($"SpawnBossCheck Check call");
                 if (EventSpawnTimer.Value <= 0)
                 {
                     yield return new WaitForSeconds(1);
@@ -76,20 +75,27 @@ file static class SpawnBossCheck
                         .Where(p => p.y < 1 + (int)ZNet.instance.GetTimeSeconds())
                         .Select(ZoneSystem.instance.GetZone).ToList();
 
+
                     if (locationsToRemove.Count > 0)
                     {
+                        Debug($"Found {locationsToRemove.Count} locations to remove");
                         foreach (var location in locationsToRemove)
                         {
                             List<ZDO> zdos = [];
                             ZoneSystem.instance.m_locationInstances.Remove(location);
                             ZDOMan.instance.FindObjects(location, zdos);
 
+                            Debug($"Found {zdos.Count} ZDOs in location {location} area");
                             var currentTime = ZNet.instance.GetTimeSeconds() + 5;
-                            foreach (var zdo in zdos.Where(zdo =>
-                                         zdo.GetLong("ChallengeChestTime", long.MaxValue) < currentTime))
+                            zdos = zdos.Where(x => x.GetLong("ChallengeChestTime", long.MaxValue) < currentTime)
+                                .ToList();
+                            Debug($"Found {zdos.Count} ZDOs in location {location} area to destroy");
+                            foreach (var zdo in zdos)
                             {
                                 zdo.SetOwner(ZDOMan.instance.m_sessionID);
                                 ZDOMan.instance.DestroyZDO(zdo);
+                                var vfx = ZDOMan.instance.CreateNewZDO(zdo.GetPosition(), VFXHash);
+                                vfx.SetPrefab(VFXHash);
                             }
                         }
 
@@ -137,7 +143,7 @@ file static class InsertMinimapIcon
 
         IEnumerator Check()
         {
-            while (true)
+            while (Minimap.instance)
             {
                 if (EventSpawnTimer.Value > 0)
                 {

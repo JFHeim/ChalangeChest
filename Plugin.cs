@@ -13,6 +13,9 @@ internal class Plugin : BaseUnityPlugin
         ModVersion = "0.1.0",
         ModGuid = $"com.{ModAuthor}.{ModName}";
 
+
+    public static readonly int VFXHash = "vfx_Place_workbench".GetStableHashCode();
+
     private void Awake()
     {
         CreateMod(this, ModName, ModAuthor, ModVersion, ModGuid);

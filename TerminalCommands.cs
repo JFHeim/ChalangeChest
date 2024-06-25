@@ -33,17 +33,3 @@ public static class TerminalCommands
             }, args), true);
     }
 }
-
-[HarmonyPatch(typeof(Character), nameof(Character.OnDeath))]
-file static class RemoveOnDeath
-{
-    [HarmonyPrefix, UsedImplicitly]
-    private static void Prefix(Character __instance)
-    {
-        if (__instance.m_nview.GetZDO().GetLong("ChallengeChestTime") <= 0) return;
-        __instance.m_nview.GetZDO().GetVec3("ChallengeChestSpawnPosition", out var spawnPos);
-        var sector = ZoneSystem.instance.GetZone(spawnPos);
-        if (ZNet.instance.IsServer()) EventSpawn.HandleChallengeDone(sector);
-        else ZNet.instance.GetServerPeer().m_rpc.Invoke("ChallengeChestDone", sector.x, sector.y);
-    }
-}

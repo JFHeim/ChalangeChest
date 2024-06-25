@@ -20,7 +20,8 @@ public static class TheConfig
     public static ConfigEntry<float> SpawnChance { get; private set; }
     public static ConfigEntry<int> WorldBossCountdownDisplayOffset { get; private set; }
 
-    public static ConfigEntry<string> ItemsNormal { get; private set; }
+    private static readonly Dictionary<Difficulty, ConfigEntry<string>> ChestItems = [];
+    public static readonly Dictionary<Difficulty, Func<List<ChestDrop>>> ChestDrops = [];
 
     public static void Init()
     {
@@ -67,15 +68,20 @@ public static class TheConfig
 
         WorldBossCountdownDisplayOffset.SettingChanged += (_, _) => EventSpawn.UpdateTimerPosition();
 
-        ItemsNormal = config("Difficulty - Normal", "ItemsInChest", "",
-            new ConfigDescription("", null,
-                new ConfigurationManagerAttributes() { CustomDrawer = DrawConfigTable, Order = --order }));
+        foreach (var difficultyName in Enum.GetNames(typeof(Difficulty)))
+        {
+            var difficulty = (Difficulty)Enum.Parse(typeof(Difficulty), difficultyName);
+            ChestItems.Add(difficulty, config($"Difficulty - {difficultyName}",
+                "ItemsInChest", "", new ConfigDescription("", null,
+                    new ConfigurationManagerAttributes() { CustomDrawer = DrawChestItems, Order = --order })));
+            ChestDrops.Add(difficulty, () => new SerializedDrops(ChestItems[difficulty].Value).Items);
+        }
     }
 
 
     [CanBeNull] internal static object configManager;
 
-    private static void DrawConfigTable(ConfigEntryBase cfg)
+    private static void DrawChestItems(ConfigEntryBase cfg)
     {
         var locked = cfg.Description.Tags
             .Select(a =>
@@ -83,7 +89,7 @@ public static class TheConfig
                     ? (bool?)a.GetType().GetField("ReadOnly")?.GetValue(a)
                     : null).FirstOrDefault(v => v != null) ?? false;
 
-        List<Drop> newReqs = [];
+        List<ChestDrop> newReqs = [];
         var wasUpdated = false;
 
         var rightColumnWidth =
@@ -127,12 +133,11 @@ public static class TheConfig
             GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
-            var chance = req.ChanceToDropAny;
+            var chance = req.ChanceToDropAny.LimitDigits(2);
             GUILayout.Label($"Chance to drop: ");
-            //show HorizontalSlider from 0 to 1
-            var newChance = GUILayout.HorizontalSlider(chance, 0f, 1f);
-            // slider: new GUIStyle(GUI.skin.horizontalSlider) { fixedWidth = 150 },
-            // thumb: new GUIStyle(GUI.skin.horizontalSliderThumb));
+            var newChance = GUILayout.HorizontalSlider(chance, 0f, 1f,
+                slider: new GUIStyle(GUI.skin.horizontalSlider) { fixedWidth = 140 },
+                thumb: new GUIStyle(GUI.skin.horizontalSliderThumb)).LimitDigits(2);
             GUILayout.Label($" {chance}%");
             var chanceToDropAny = locked ? req.ChanceToDropAny : newChance;
             wasUpdated = wasUpdated || !Approximately(chanceToDropAny, req.ChanceToDropAny);
@@ -147,7 +152,7 @@ public static class TheConfig
             }
             else
             {
-                newReqs.Add(new Drop
+                newReqs.Add(new ChestDrop
                 {
                     ItemName = itemName,
                     AmountMin = amountMin,
@@ -160,7 +165,7 @@ public static class TheConfig
             if (GUILayout.Button("|+| Add", new GUIStyle(GUI.skin.button) { fixedWidth = 60 }) && !locked)
             {
                 wasUpdated = true;
-                newReqs.Add(new Drop
+                newReqs.Add(new ChestDrop
                 {
                     ItemName = "",
                     AmountMin = 1,
@@ -183,25 +188,24 @@ public static class TheConfig
         }
     }
 
-    public class SerializedDrops
+    private class SerializedDrops
     {
-        public readonly List<Drop> Items;
+        public readonly List<ChestDrop> Items;
 
-        public SerializedDrops(List<Drop> items) => Items = items;
+        public SerializedDrops(List<ChestDrop> items) => Items = items;
 
         public SerializedDrops(string reqs)
         {
             Items = reqs.Split(',').Select(r =>
             {
                 var parts = r.Split(':');
-                var drop = new Drop
+                var drop = new ChestDrop
                 {
                     ItemName = parts[0],
                     AmountMin = parts.Length > 1 && int.TryParse(parts[1], out var amountMin) ? amountMin : 1,
                     AmountMax = parts.Length > 2 && int.TryParse(parts[2], out var amountMax) ? amountMax : 1,
-                    ChanceToDropAny = parts.Length > 3 && !float.TryParse(parts[3].Replace(".", ","), out var chance) ? chance : 1f,
+                    ChanceToDropAny = parts.Length > 3 && float.TryParse(parts[3], out var chance) ? chance : 1f,
                 };
-                DebugError($"{parts[3]}|{drop.ChanceToDropAny}");
 
                 return drop;
             }).ToList();
@@ -228,7 +232,7 @@ file static class FindConfigManager
     }
 }
 
-public struct Drop
+public struct ChestDrop
 {
     public string ItemName;
     public int AmountMin;

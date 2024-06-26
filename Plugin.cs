@@ -20,11 +20,17 @@ internal class Plugin : BaseUnityPlugin
     {
         CreateMod(this, ModName, ModAuthor, ModVersion, ModGuid);
         Localizer.Load();
-        TheConfig.Init();
+        Init();
 
         RegisterPrefabs.LoadAll();
         bundle.Unload(false);
         EventSetup.Init();
         EventSpawn.Init();
+
+        var input1 = new Vector3(1, 2, 3);
+        var processor1 = input1.RoundCords();
+        var processor2 = processor1.ToV2();
+        var processor3 = processor2.ToV3();
+        Debug($"\n\n\n\n\n\n{input1} -> {processor1} -> {processor2} -> {processor3}\n\n\n\n\n\n");
     }
 }

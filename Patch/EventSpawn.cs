@@ -11,24 +11,23 @@ public class EventSpawn
     public static readonly Dictionary<Difficulty, Location> Locations = new();
     public static Dictionary<Difficulty, SoftReference<GameObject>> locationReferences = new();
     public static readonly Dictionary<Difficulty, Sprite> Icons = new();
-    public static readonly List<Vector3> CurrentBossPositions = [];
     public static TextMeshProUGUI bossTimer = null!;
 
     private static DateTime _lastBossSpawn = DateTime.MinValue;
 
     public static void Init()
     {
-        Debug($"Initializing EventSpawn");
+        Debug("Initializing EventSpawn");
 
         foreach (var kv in Icons)
             Locations.Add(kv.Key, RegisterPrefabs.Prefab(kv.Key.Prefab()).GetComponent<Location>());
 
-        Debug($"Done EventSpawn init");
+        Debug("Done EventSpawn init");
     }
 
     public static void BroadcastMinimapUpdate()
     {
-        Debug($"BroadcastMinimapUpdate");
+        Debug("BroadcastMinimapUpdate");
         ZoneSystem.instance.SendLocationIcons(ZRoutedRpc.Everybody);
         if (!Minimap.instance) return;
         Minimap.instance.UpdateLocationPins(10);
@@ -46,14 +45,11 @@ public class EventSpawn
         Debug("UpdateTimerPosition 0");
         if (!Minimap.instance) return;
         var rect = (RectTransform)Minimap.instance.m_largeRoot.transform.Find("IconPanel").transform;
-        Debug("UpdateTimerPosition 1");
         var anchoredPosition = rect.anchoredPosition;
-        Debug("UpdateTimerPosition 2");
         var rectTransform = bossTimer.GetComponent<RectTransform>();
-        Debug("UpdateTimerPosition 3");
+        Debug("UpdateTimerPosition 1");
         rectTransform.anchoredPosition = new Vector2(-anchoredPosition.x - 30,
-            -anchoredPosition.y - 5 - WorldBossCountdownDisplayOffset.Value);
-        Debug("UpdateTimerPosition 4");
+            -anchoredPosition.y - 5 - MapDisplayOffset.Value);
         rectTransform.anchorMin = new Vector2(0, 1);
         rectTransform.anchorMax = new Vector2(0, 1);
         rectTransform.sizeDelta = rect.sizeDelta;
@@ -65,13 +61,10 @@ public class EventSpawn
     {
         Debug("SpawnBoss 0");
         if (_lastBossSpawn == ZNet.instance.GetTime() || GetRandomSpawnPoint() is not { } pos) return;
-        Debug("SpawnBoss 1");
         var despawnTime = ZNet.instance.GetTime().AddMinutes(TimeLimit.Value).Ticks / 10000000L;
-        Debug("SpawnBoss 2");
 
         var difficulty = Icons.Keys.ToList()[Random.Range(0, Min(0, Icons.Count - 1))];
 
-        Debug("SpawnBoss 3");
         ZoneSystem.instance.RegisterLocation(new ZoneSystem.ZoneLocation
         {
             m_iconAlways = true,
@@ -79,11 +72,9 @@ public class EventSpawn
             m_prefab = locationReferences[difficulty],
         }, pos with { y = despawnTime }, true);
 
-        Debug("SpawnBoss 4");
+        Debug("SpawnBoss 1");
         SpawnEventLocation(pos, difficulty, despawnTime);
-        Debug("SpawnBoss 5");
         _lastBossSpawn = ZNet.instance.GetTime();
-        Debug("SpawnBoss 6");
         BroadcastMinimapUpdate();
         Debug("SpawnBoss finish");
     }
@@ -144,16 +135,15 @@ public class EventSpawn
             if (baseValue > 1) continue;
 
             Debug($"GetRandomSpawnPoint 7, point={point}");
-            return point with { y = WorldGenerator.instance.GetHeight(point.x, point.z) };
+            return point.RoundCords() with { y = WorldGenerator.instance.GetHeight(point.x, point.z) };
         }
 
-        Debug($"GetRandomSpawnPoint finish");
+        Debug("GetRandomSpawnPoint finish");
         return null;
     }
 
     public static async void HandleChallengeDone(Vector2i sector)
     {
-        Debug($"HandleChallengeDone 0 {sector}");
         if (!ZoneSystem.instance || ZoneSystem.instance.m_locationInstances is null) return;
         if (ZoneSystem.instance.m_locationInstances.TryGetValue(sector, out var location)
             && !Approximately(location.m_position.y, (long)location.m_position.y))
@@ -162,44 +152,99 @@ public class EventSpawn
             return;
         }
 
-        Debug($"HandleChallengeDone 1");
-
         ZoneSystem.instance.m_locationInstances.Remove(sector);
+        ZoneSystem.instance.StartCoroutine(CheckDespawnEnumerator());
 
-        Debug($"HandleChallengeDone 2");
-        var position = new Vector3(location.m_position.x,
+        var eventPos = new Vector3(location.m_position.x,
             WorldGenerator.instance.GetHeight(location.m_position.x, location.m_position.z), location.m_position.z);
 
-        Debug($"HandleChallengeDone 3");
         var zdos = await ZoneSystem.instance.GetWorldObjectsAsync(zdo =>
-            zdo.GetVec3("ChallengeChestPos", Vector3.zero).RoundCords() == position.RoundCords());
-        Debug($"HandleChallengeDone 4");
+        {
+            var mobEventPos = zdo.GetVec3("ChallengeChestPos", Vector3.zero).ToV2();
+            return mobEventPos != Vector2.zero && mobEventPos == eventPos.RoundCords().ToV2();
+        });
+
+        //Should never happen, if happens it will destroy entire world
+        if (zdos.Count > 100)
+        {
+            DebugError("Too many zdos, looks suspicious... aborting", true, true);
+            return;
+        }
+
         ZDO vfx;
         Debug($"Finishing ChallengeChest, {zdos.Count} zdos will be destroyed");
         foreach (var zdo in zdos)
         {
             vfx = ZDOMan.instance.CreateNewZDO(zdo.GetPosition(), VFXHash);
             vfx.SetPrefab(VFXHash);
-            //Instead of destroying, just set it ChallengeChestTime to 0
-            // ZDOMan.instance.DestroyZDO(zdo);
-            zdo.Set("ChallengeChestTime", long.MinValue);
+            ZDOMan.instance.DestroyZDO(zdo);
         }
 
-        Debug($"HandleChallengeDone 5 creating chest");
-        var chest = ZDOMan.instance.CreateNewZDO(position, "cc_SuccessChest_normal".GetStableHashCode());
+        var chest = ZDOMan.instance.CreateNewZDO(eventPos, "cc_SuccessChest_normal".GetStableHashCode());
         chest.SetPrefab("cc_SuccessChest_normal".GetStableHashCode());
-        chest.SetPosition(position);
-        Debug($"HandleChallengeDone 6 populating chest");
+        chest.SetPosition(eventPos);
+        Debug($"HandleChallengeDone 1 populating chest, " +
+              $"chest={chest?.ToString() ?? "null"}, " +
+              $"location.m_location={location.m_location?.ToString() ?? "null"}");
+        if (location.m_location == null) return;
+        Debug("HandleChallengeDone 2 populating chest");
         PopulateChest(chest, location.m_location.m_prefabName.GetDifficultyFromPrefab());
-        Debug($"HandleChallengeDone 7 spawning vfx");
+        Debug("HandleChallengeDone 3 spawning vfx");
         vfx = ZDOMan.instance.CreateNewZDO(chest.GetPosition(), VFXHash);
         vfx.SetPrefab(VFXHash);
-        Debug($"HandleChallengeDone 8 snapping");
         SnapToGround.SnappAll();
-
-        Debug($"HandleChallengeDone 9 broadcasting minimap update");
         BroadcastMinimapUpdate();
-        Debug($"HandleChallengeDone finish");
+        Debug("HandleChallengeDone finish");
+    }
+
+    public static IEnumerator CheckDespawnEnumerator()
+    {
+        var zdosLoaded = false;
+        List<ZDO> zdos = null;
+
+        var locationsToRemove = ZoneSystem.instance.m_locationInstances
+            .Select(x => x.Value.m_position.RoundCords())
+            .Where(p => p.y < 1 + (int)ZNet.instance.GetTimeSeconds())
+            .Select(x => x.ToV2())
+            .ToList();
+        
+        if (locationsToRemove.Count > 0)
+        {
+            foreach (var locationPos in locationsToRemove)
+            {
+                var zone = locationPos.ToV3().GetZone();
+                ZoneSystem.instance.m_locationInstances.Remove(zone);
+                LoadLocationZdos(locationPos);
+                yield return new WaitUntil(() => zdosLoaded);
+
+                Debug($"CheckDespawnEnumerator Found {zdos.Count} ZDOs in location {locationPos} area");
+                var currentTime = ZNet.instance.GetTimeSeconds() + 5;
+                zdos = zdos.Where(x => x.GetLong("ChallengeChestTime", long.MaxValue) < currentTime)
+                    .ToList();
+                Debug($"CheckDespawnEnumerator Found {zdos.Count} ZDOs in location {locationPos} area to destroy");
+                foreach (var zdo in zdos)
+                {
+                    zdo.SetOwner(ZDOMan.instance.m_sessionID);
+                    ZDOMan.instance.DestroyZDO(zdo);
+                    var vfx = ZDOMan.instance.CreateNewZDO(zdo.GetPosition(), VFXHash);
+                    vfx.SetPrefab(VFXHash);
+                }
+            }
+
+            BroadcastMinimapUpdate();
+        }
+
+        yield break;
+
+        async void LoadLocationZdos(Vector2 locationPos)
+        {
+            zdosLoaded = false;
+
+            zdos = await ZoneSystem.instance.GetWorldObjectsAsync(zdo =>
+                zdo.GetVec3("ChallengeChestPos", Vector3.zero).ToV2() == locationPos);
+
+            zdosLoaded = true;
+        }
     }
 
     private static void PopulateChest(ZDO zdo, Difficulty difficulty)
@@ -281,7 +326,7 @@ public class EventSpawn
             instance.SetPosition(worldPosition);
             instance.SetRotation(worldRotation);
             instance.Set("ChallengeChestTime", despawnTime);
-            instance.Set("ChallengeChestPos", pos.RoundCords());
+            instance.Set("ChallengeChestPos", pos.RoundCords() with { y = 0 });
 
             DebugWarning($"Spawned {instance}");
         }

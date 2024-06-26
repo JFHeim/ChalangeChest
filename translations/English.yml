@@ -1,2 +1,3 @@
 cc_none: "none"
 cc_chest_title: "Award awaits the strong"
+cc_next_event_spawn: "Next challenge chest: $1"

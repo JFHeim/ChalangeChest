@@ -1,24 +1,19 @@
 using System.Reflection;
+using BepInEx.Bootstrap;
 using BepInEx.Configuration;
-using HarmonyLib;
 using ChallengeChest.Patch;
+using HarmonyLib;
 
 namespace ChallengeChest;
 
 public static class TheConfig
 {
-    public static ConfigEntry<float> EventIntervalMin { get; private set; }
-    public static ConfigEntry<int> EventChance { get; private set; }
-    public static ConfigEntry<int> MaxEvents { get; private set; }
-    public static ConfigEntry<float> EventRange { get; private set; }
-    public static ConfigEntry<int> EventTime { get; private set; }
     public static ConfigEntry<int> EventSpawnTimer { get; private set; }
     public static ConfigEntry<int> SpawnMinDistance { get; private set; }
     public static ConfigEntry<int> SpawnMaxDistance { get; private set; }
     public static ConfigEntry<int> SpawnBaseDistance { get; private set; }
     public static ConfigEntry<int> TimeLimit { get; private set; }
-    public static ConfigEntry<float> SpawnChance { get; private set; }
-    public static ConfigEntry<int> WorldBossCountdownDisplayOffset { get; private set; }
+    public static ConfigEntry<int> MapDisplayOffset { get; private set; }
 
     private static readonly Dictionary<Difficulty, ConfigEntry<string>> ChestItems = [];
     public static readonly Dictionary<Difficulty, Func<List<ChestDrop>>> ChestDrops = [];
@@ -26,21 +21,10 @@ public static class TheConfig
     public static void Init()
     {
         var order = 0;
-        EventIntervalMin = config("General", "EventIntervalMin", 1f, "");
-        EventChance = config("General", "EventChance", 10,
-            new ConfigDescription("In percents", new AcceptableValueRange<int>(0, 100),
-                new ConfigurationManagerAttributes { Order = --order }));
-        MaxEvents = config("General", "MaxEvents", 1,
-            new ConfigDescription("", new AcceptableValueRange<int>(1, 5),
-                new ConfigurationManagerAttributes { Order = --order }));
-        EventRange = config("General", "EventRange", 18f,
-            new ConfigDescription("", new AcceptableValueRange<float>(5f, 60),
-                new ConfigurationManagerAttributes { Order = --order }));
-        EventTime = config("General", "EventTime", 1500,
-            new ConfigDescription("In seconds", new AcceptableValueRange<int>(5, 86400),
-                new ConfigurationManagerAttributes { Order = --order }));
-        EventSpawnTimer = config("General", "EventSpawnTimer", 0,
-            new ConfigDescription("In seconds", new AcceptableValueRange<int>(0, 86400),
+
+        EventSpawnTimer = config("General", "EventSpawnTimer", 60,
+            new ConfigDescription("Interval between ChallengeChest spawns. In minutes",
+                new AcceptableValueRange<int>(1, 10080),
                 new ConfigurationManagerAttributes { Order = --order }));
 
         SpawnMinDistance = config("General", "Minimum Distance ChallengeChest Spawns", 1000,
@@ -56,24 +40,19 @@ public static class TheConfig
             new ConfigDescription("Time in minutes before ChallengeChest despawn.", null,
                 new ConfigurationManagerAttributes { Order = --order }));
 
-        SpawnChance = config("General", "ChallengeChest Spawn Chance", 10f,
-            new ConfigDescription(
-                "Chance for the ChallengeChest to spawn. Set this to 0, to disable the spawn.",
-                new AcceptableValueRange<float>(0f, 100f), new ConfigurationManagerAttributes { Order = --order }));
-
-        WorldBossCountdownDisplayOffset = config("General", "Countdown Display Offset", 0,
+        MapDisplayOffset = config("Visual", "Countdown Display Offset - Label on map", 0,
             new ConfigDescription("Offset for the world boss countdown display on the world map. " +
                                   "Increase this, to move the display down, to prevent overlapping with other mods.",
                 null, new ConfigurationManagerAttributes { Order = --order }), false);
 
-        WorldBossCountdownDisplayOffset.SettingChanged += (_, _) => EventSpawn.UpdateTimerPosition();
+        MapDisplayOffset.SettingChanged += (_, _) => EventSpawn.UpdateTimerPosition();
 
         foreach (var difficultyName in Enum.GetNames(typeof(Difficulty)))
         {
             var difficulty = (Difficulty)Enum.Parse(typeof(Difficulty), difficultyName);
             ChestItems.Add(difficulty, config($"Difficulty - {difficultyName}",
                 "ItemsInChest", "", new ConfigDescription("", null,
-                    new ConfigurationManagerAttributes() { CustomDrawer = DrawChestItems, Order = --order })));
+                    new ConfigurationManagerAttributes { CustomDrawer = DrawChestItems, Order = --order })));
             ChestDrops.Add(difficulty, () => new SerializedDrops(ChestItems[difficulty].Value).Items);
         }
     }
@@ -134,7 +113,7 @@ public static class TheConfig
 
             GUILayout.BeginHorizontal();
             var chance = req.ChanceToDropAny.LimitDigits(2);
-            GUILayout.Label($"Chance to drop: ");
+            GUILayout.Label("Chance to drop: ");
             var newChance = GUILayout.HorizontalSlider(chance, 0f, 1f,
                 slider: new GUIStyle(GUI.skin.horizontalSlider) { fixedWidth = 140 },
                 thumb: new GUIStyle(GUI.skin.horizontalSliderThumb)).LimitDigits(2);
@@ -228,7 +207,7 @@ file static class FindConfigManager
         var configManagerType = bepinexConfigManager?.GetType("ConfigurationManager.ConfigurationManager");
         configManager = configManagerType == null
             ? null
-            : BepInEx.Bootstrap.Chainloader.ManagerObject.GetComponent(configManagerType);
+            : Chainloader.ManagerObject.GetComponent(configManagerType);
     }
 }
 

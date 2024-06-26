@@ -8,34 +8,35 @@ file static class DetectChallengeEnd
     [HarmonyPrefix, UsedImplicitly]
     private static void Prefix(Character __instance)
     {
-        var eventPos = __instance.m_nview.GetZDO().GetVec3("ChallengeChestPos", Vector3.zero);
-        Debug($"eventPos = {eventPos}, zone = {eventPos.GetZone()}");
-        if (eventPos == Vector3.zero) return;
+        if (!__instance.m_nview.IsOwner()) return;
+        var eventPos = __instance.m_nview.GetZDO().GetVec3("ChallengeChestPos", Vector3.zero).ToV2();
+        if (eventPos is { x: 0, y: 0 }) return;
+
+        var drop = __instance.GetComponent<CharacterDrop>();
+        //TODO: mob drop from config
+        drop.m_drops?.Clear();
+
         Logic(eventPos, __instance);
     }
 
-    private static async void Logic(Vector3 eventPos, Character itself)
+    private static async void Logic(Vector2 eventPos, Character itself)
     {
-        Character.GetAllCharacters()
+        await Task.Delay(1000); // wait for mob zdo to be destroyed
+
+        var myEventMobsNearby = Character.GetAllCharacters()
             .Where(x => x != itself)
             .Select(x => x?.m_nview?.GetZDO())
             .Where(x => x is not null)
-            .Select(x => (x, x.GetVec3("ChallengeChestPos", Vector3.zero)))
-            .Where(x => x.Item2 != Vector3.zero)
-            .GroupBy(tuple => tuple.Item2)
-            .ToDictionary(
-                group => group.Key,
-                group => group.Select(tup => tup.x).ToList()
-            ).TryGetValue(eventPos, out var myEventMobsNearby);
-        Debug($"DetectChallengeEnd Local event mobs nearby: {myEventMobsNearby?.Count.ToString() ?? "null"}");
-        if (myEventMobsNearby == null || myEventMobsNearby.Count > 0) return;
+            .Select(x => (x, x.GetVec3("ChallengeChestPos", Vector3.zero).ToV2()))
+            .Where(x => x.Item2 == eventPos)
+            .Select(x => x.x).ToList();
+        if (myEventMobsNearby is { Count: > 0 }) return;
 
         myEventMobsNearby = await ZoneSystem.instance.GetWorldObjectsAsync(zdo =>
-            zdo.GetVec3("ChallengeChestPos", Vector3.zero) == eventPos);
-        Debug($"DetectChallengeEnd World event mobs nearby: {myEventMobsNearby?.Count.ToString() ?? "null"}");
-        if (myEventMobsNearby == null || myEventMobsNearby.Count > 0) return;
+            zdo.GetVec3("ChallengeChestPos", Vector3.zero).ToV2() == eventPos);
+        if (myEventMobsNearby is { Count: > 0 }) return;
 
-        var sector = eventPos.GetZone();
+        var sector = eventPos.ToV3().GetZone();
         Debug($"DetectChallengeEnd Calling HandleChallengeDone on sector {sector}");
         EventSpawn.HandleChallengeDone(sector);
     }

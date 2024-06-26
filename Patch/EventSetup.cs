@@ -6,11 +6,11 @@ public static class EventSetup
     
     public static void Init()
     {
-        Debug($"Initializing EventSetup...");
+        Debug("Initializing EventSetup...");
         Events.Add(new EventData("cc_Event_Normal"));
 
         EventSpawn.Icons[Difficulty.Normal] = RegisterPrefabs.Sprite("cc_IconNormal");
         
-        Debug($"Done EventSetup init");
+        Debug("Done EventSetup init");
     }
 }

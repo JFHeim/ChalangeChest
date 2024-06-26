@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Reflection;
 using BepInEx.Bootstrap;
 using BepInEx.Configuration;
@@ -8,6 +9,8 @@ namespace ChallengeChest;
 
 public static class TheConfig
 {
+    private static readonly HashSet<string> HidedChestDrops = [];
+
     public static ConfigEntry<int> EventSpawnTimer { get; private set; }
     public static ConfigEntry<int> SpawnMinDistance { get; private set; }
     public static ConfigEntry<int> SpawnMaxDistance { get; private set; }
@@ -25,7 +28,7 @@ public static class TheConfig
         EventSpawnTimer = config("General", "EventSpawnTimer", 60,
             new ConfigDescription("Interval between ChallengeChest spawns. In minutes",
                 new AcceptableValueRange<int>(1, 10080),
-                new ConfigurationManagerAttributes { Order = --order }));
+                new ConfigurationManagerAttributes { Order = --order, CustomDrawer = DrawTime }));
 
         SpawnMinDistance = config("General", "Minimum Distance ChallengeChest Spawns", 1000,
             new ConfigDescription("Minimum distance from the center of the map for ChallengeChest spawns.", null,
@@ -38,7 +41,7 @@ public static class TheConfig
                 new ConfigurationManagerAttributes { Order = --order }));
         TimeLimit = config("General", "Time Limit", 60,
             new ConfigDescription("Time in minutes before ChallengeChest despawn.", null,
-                new ConfigurationManagerAttributes { Order = --order }));
+                new ConfigurationManagerAttributes { Order = --order, CustomDrawer = DrawTime }));
 
         MapDisplayOffset = config("Visual", "Countdown Display Offset - Label on map", 0,
             new ConfigDescription("Offset for the world boss countdown display on the world map. " +
@@ -50,15 +53,39 @@ public static class TheConfig
         foreach (var difficultyName in Enum.GetNames(typeof(Difficulty)))
         {
             var difficulty = (Difficulty)Enum.Parse(typeof(Difficulty), difficultyName);
-            ChestItems.Add(difficulty, config($"Difficulty - {difficultyName}",
-                "ItemsInChest", "", new ConfigDescription("", null,
+            ChestItems.Add(difficulty, config("Chest Drop",
+                $"Difficulty - {difficultyName}", "", new ConfigDescription("", null,
                     new ConfigurationManagerAttributes { CustomDrawer = DrawChestItems, Order = --order })));
             ChestDrops.Add(difficulty, () => new SerializedDrops(ChestItems[difficulty].Value).Items);
+            HidedChestDrops.Add(difficultyName);
         }
     }
 
-
     [CanBeNull] internal static object configManager;
+
+    private static void DrawTime(ConfigEntryBase cfg)
+    {
+        var locked = cfg.Description.Tags
+            .Select(a =>
+                a.GetType().Name == "ConfigurationManagerAttributes"
+                    ? (bool?)a.GetType().GetField("ReadOnly")?.GetValue(a)
+                    : null).FirstOrDefault(v => v != null) ?? false;
+
+        var wasUpdated = false;
+        var time = TimeSpan.FromMinutes(float.Parse(cfg.BoxedValue.ToString()));
+
+        GUILayout.BeginHorizontal();
+
+        var oldValue = time.TotalMinutes.ToString(CultureInfo.InvariantCulture);
+        var newValue = GUILayout.TextField(oldValue, new GUIStyle(GUI.skin.textField));
+        var result = locked ? oldValue : newValue;
+        wasUpdated = result != oldValue;
+        GUILayout.Label(time.ToHumanReadableString(), new GUIStyle(GUI.skin.label) { fixedWidth = 120 });
+
+        GUILayout.EndHorizontal();
+
+        if (wasUpdated) cfg.BoxedValue = (int)float.Parse(result);
+    }
 
     private static void DrawChestItems(ConfigEntryBase cfg)
     {
@@ -67,6 +94,10 @@ public static class TheConfig
                 a.GetType().Name == "ConfigurationManagerAttributes"
                     ? (bool?)a.GetType().GetField("ReadOnly")?.GetValue(a)
                     : null).FirstOrDefault(v => v != null) ?? false;
+
+
+        var difficultyName = cfg.Definition.Key.Replace("Difficulty - ", "");
+        var isHided = HidedChestDrops.Contains(difficultyName);
 
         List<ChestDrop> newReqs = [];
         var wasUpdated = false;
@@ -77,94 +108,100 @@ public static class TheConfig
                 .Invoke(configManager, []) ?? 130);
 
         GUILayout.BeginVertical();
-        foreach (var req in new SerializedDrops((string)cfg.BoxedValue).Items)
+        if (!isHided)
         {
-            GUILayout.BeginVertical();
-            GUILayout.BeginHorizontal();
-
-            GUILayout.Label("Amount Min/Max:");
-            var amountMin = req.AmountMin;
-            if (int.TryParse(
-                    GUILayout.TextField(amountMin.ToString(), new GUIStyle(GUI.skin.textField) { fixedWidth = 78 }),
-                    out var newAmountMin) && newAmountMin != amountMin && !locked)
+            foreach (var req in new SerializedDrops(cfg.BoxedValue.ToString()).Items)
             {
-                amountMin = newAmountMin;
-                wasUpdated = true;
-            }
+                GUILayout.BeginVertical();
+                GUILayout.BeginHorizontal();
 
-            GUILayout.Label("/");
-            var amountMax = req.AmountMax;
-            if (int.TryParse(
-                    GUILayout.TextField(amountMax.ToString(), new GUIStyle(GUI.skin.textField) { fixedWidth = 78 }),
-                    out var newAmountMax) && newAmountMax != amountMax && !locked)
-            {
-                amountMax = newAmountMax;
-                wasUpdated = true;
-            }
-
-            GUILayout.EndHorizontal();
-
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("Item Name:");
-            var newItemName = GUILayout.TextField(req.ItemName, new GUIStyle(GUI.skin.textField) { fixedWidth = 180 });
-            var itemName = locked ? req.ItemName : newItemName;
-            wasUpdated = wasUpdated || itemName != req.ItemName;
-            GUILayout.EndHorizontal();
-
-            GUILayout.BeginHorizontal();
-            var chance = req.ChanceToDropAny.LimitDigits(2);
-            GUILayout.Label("Chance to drop: ");
-            var newChance = GUILayout.HorizontalSlider(chance, 0f, 1f,
-                slider: new GUIStyle(GUI.skin.horizontalSlider) { fixedWidth = 140 },
-                thumb: new GUIStyle(GUI.skin.horizontalSliderThumb)).LimitDigits(2);
-            GUILayout.Label($" {chance}%");
-            var chanceToDropAny = locked ? req.ChanceToDropAny : newChance;
-            wasUpdated = wasUpdated || !Approximately(chanceToDropAny, req.ChanceToDropAny);
-
-            GUILayout.EndHorizontal();
-
-
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("|X| Remove", new GUIStyle(GUI.skin.button) { fixedWidth = 85 }) && !locked)
-            {
-                wasUpdated = true;
-            }
-            else
-            {
-                newReqs.Add(new ChestDrop
+                GUILayout.Label("Amount Min/Max:");
+                var amountMin = req.AmountMin;
+                if (int.TryParse(
+                        GUILayout.TextField(amountMin.ToString(), new GUIStyle(GUI.skin.textField) { fixedWidth = 78 }),
+                        out var newAmountMin) && newAmountMin != amountMin && !locked)
                 {
-                    ItemName = itemName,
-                    AmountMin = amountMin,
-                    AmountMax = amountMax,
-                    ChanceToDropAny = chanceToDropAny
-                    // , Recover = recover 
-                });
-            }
+                    amountMin = newAmountMin;
+                    wasUpdated = true;
+                }
 
-            if (GUILayout.Button("|+| Add", new GUIStyle(GUI.skin.button) { fixedWidth = 60 }) && !locked)
-            {
-                wasUpdated = true;
-                newReqs.Add(new ChestDrop
+                GUILayout.Label("/");
+                var amountMax = req.AmountMax;
+                if (int.TryParse(
+                        GUILayout.TextField(amountMax.ToString(), new GUIStyle(GUI.skin.textField) { fixedWidth = 78 }),
+                        out var newAmountMax) && newAmountMax != amountMax && !locked)
                 {
-                    ItemName = "",
-                    AmountMin = 1,
-                    AmountMax = 1,
-                    ChanceToDropAny = 1,
-                    // , Recover = false 
-                });
+                    amountMax = newAmountMax;
+                    wasUpdated = true;
+                }
+
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("Item Name:");
+                var newItemName =
+                    GUILayout.TextField(req.ItemName, new GUIStyle(GUI.skin.textField) { fixedWidth = 180 });
+                var itemName = locked ? req.ItemName : newItemName;
+                wasUpdated = wasUpdated || itemName != req.ItemName;
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+                var chance = req.ChanceToDropAny.LimitDigits(2);
+                GUILayout.Label("Chance to drop: ");
+                var newChance = GUILayout.HorizontalSlider(chance, 0f, 1f,
+                    slider: new GUIStyle(GUI.skin.horizontalSlider) { fixedWidth = 140 },
+                    thumb: new GUIStyle(GUI.skin.horizontalSliderThumb)).LimitDigits(2);
+                GUILayout.Label($" {chance}%");
+                var chanceToDropAny = locked ? req.ChanceToDropAny : newChance;
+                wasUpdated = wasUpdated || !Approximately(chanceToDropAny, req.ChanceToDropAny);
+
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("|X| Remove", new GUIStyle(GUI.skin.button) { fixedWidth = 10 * 8 + 8 }) &&
+                    !locked)
+                    wasUpdated = true;
+                else
+                    newReqs.Add(new ChestDrop
+                    {
+                        ItemName = itemName,
+                        AmountMin = amountMin,
+                        AmountMax = amountMax,
+                        ChanceToDropAny = chanceToDropAny
+                    });
+                
+                if (GUILayout.Button("|+| Add", new GUIStyle(GUI.skin.button) { fixedWidth = 7 * 8 + 8 }) && !locked)
+                {
+                    wasUpdated = true;
+                    newReqs.Add(new ChestDrop
+                    {
+                        ItemName = "",
+                        AmountMin = 1,
+                        AmountMax = 1,
+                        ChanceToDropAny = 1,
+                        // , Recover = false 
+                    });
+                }
+
+                GUILayout.EndHorizontal();
+
+                GUILayout.EndVertical();
             }
-
-            GUILayout.EndHorizontal();
-
-            GUILayout.EndVertical();
         }
 
+        GUILayout.BeginHorizontal();
+
+        if (GUILayout.Button($"|@| {(isHided ? "Show chest drop" : "Hide")}",
+                new GUIStyle(GUI.skin.button) { fixedWidth = isHided ? 19 * 8 + 8 : 8 * 8 + 8 }) && !locked)
+        {
+            if (isHided) HidedChestDrops.Remove(difficultyName);
+            else HidedChestDrops.Add(difficultyName);
+        }
+
+        GUILayout.EndHorizontal();
         GUILayout.EndVertical();
 
-        if (wasUpdated)
-        {
-            cfg.BoxedValue = new SerializedDrops(newReqs).ToString();
-        }
+        if (wasUpdated) cfg.BoxedValue = new SerializedDrops(newReqs).ToString();
     }
 
     private class SerializedDrops

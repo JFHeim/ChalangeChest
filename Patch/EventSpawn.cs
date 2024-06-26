@@ -57,10 +57,12 @@ public class EventSpawn
         Debug("UpdateTimerPosition finish");
     }
 
-    public static void SpawnBoss()
+    public static void SpawnBoss(Vector3? pos = null)
     {
         Debug("SpawnBoss 0");
-        if (_lastBossSpawn == ZNet.instance.GetTime() || GetRandomSpawnPoint() is not { } pos) return;
+        if (_lastBossSpawn == ZNet.instance.GetTime()) return;
+        pos ??= GetRandomSpawnPoint();
+        if (pos is null) return;
         var despawnTime = ZNet.instance.GetTime().AddMinutes(TimeLimit.Value).Ticks / 10000000L;
 
         var difficulty = Icons.Keys.ToList()[Random.Range(0, Min(0, Icons.Count - 1))];
@@ -70,10 +72,13 @@ public class EventSpawn
             m_iconAlways = true,
             m_prefabName = Locations[difficulty].name,
             m_prefab = locationReferences[difficulty],
-        }, pos with { y = despawnTime }, true);
+        }, pos.Value with { y = despawnTime }, true);
+        // var locationInstance = ZoneSystem.instance.m_locationInstances[pos.Value.GetZone()];
+        // locationInstance.m_placed = true;
+        // ZoneSystem.instance.m_locationInstances[pos.Value.GetZone()] = locationInstance;
 
         Debug("SpawnBoss 1");
-        SpawnEventLocation(pos, difficulty, despawnTime);
+        SpawnEventLocation(pos.Value, difficulty, despawnTime);
         _lastBossSpawn = ZNet.instance.GetTime();
         BroadcastMinimapUpdate();
         Debug("SpawnBoss finish");
@@ -183,12 +188,9 @@ public class EventSpawn
         var chest = ZDOMan.instance.CreateNewZDO(eventPos, "cc_SuccessChest_normal".GetStableHashCode());
         chest.SetPrefab("cc_SuccessChest_normal".GetStableHashCode());
         chest.SetPosition(eventPos);
-        Debug($"HandleChallengeDone 1 populating chest, " +
-              $"chest={chest?.ToString() ?? "null"}, " +
-              $"location.m_location={location.m_location?.ToString() ?? "null"}");
         if (location.m_location == null) return;
         Debug("HandleChallengeDone 2 populating chest");
-        PopulateChest(chest, location.m_location.m_prefabName.GetDifficultyFromPrefab());
+        PopulateChest(chest, location.m_location.m_prefabName.GetDifficultyFromPrefab().Value);
         Debug("HandleChallengeDone 3 spawning vfx");
         vfx = ZDOMan.instance.CreateNewZDO(chest.GetPosition(), VFXHash);
         vfx.SetPrefab(VFXHash);
@@ -207,7 +209,7 @@ public class EventSpawn
             .Where(p => p.y < 1 + (int)ZNet.instance.GetTimeSeconds())
             .Select(x => x.ToV2())
             .ToList();
-        
+
         if (locationsToRemove.Count > 0)
         {
             foreach (var locationPos in locationsToRemove)
@@ -327,6 +329,7 @@ public class EventSpawn
             instance.SetRotation(worldRotation);
             instance.Set("ChallengeChestTime", despawnTime);
             instance.Set("ChallengeChestPos", pos.RoundCords() with { y = 0 });
+            instance.Persistent = true;
 
             DebugWarning($"Spawned {instance}");
         }

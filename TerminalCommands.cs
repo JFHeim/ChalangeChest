@@ -13,7 +13,7 @@ public static class TerminalCommands
     private static void AddCommands()
     {
         new Terminal.ConsoleCommand("startChallenge",
-            "", args => RunCommand(args =>
+            "Start the Challenge Chest at randomly generated position", args => RunCommand(args =>
             {
                 if (!IsAdmin) throw new ConsoleCommandException("You are not an admin on this server");
 
@@ -22,7 +22,17 @@ public static class TerminalCommands
                 args.Context.AddString("Done");
             }, args), true);
 
-        new Terminal.ConsoleCommand("finishChallenge",
+        new Terminal.ConsoleCommand("startChallengehere",
+            "Start the Challenge Chest at current player position", args => RunCommand(args =>
+            {
+                if (!IsAdmin) throw new ConsoleCommandException("You are not an admin on this server");
+
+                EventSpawn.SpawnBoss(m_localPlayer.transform.position.RoundCords());
+
+                args.Context.AddString("Done");
+            }, args), true);
+
+        new Terminal.ConsoleCommand("finishChallengehere",
             "Finish the Challenge Chest in the current player zone/chunk/sector", args => RunCommand(args =>
             {
                 if (!IsAdmin) throw new ConsoleCommandException("You are not an admin on this server");

@@ -4,10 +4,8 @@ using static ChallengeChest.Patch.EventSpawn;
 namespace ChallengeChest.Patch;
 
 [HarmonyPatch(typeof(Minimap), nameof(Minimap.Awake))]
-file static class InsertMinimapIcon
+public static class InsertMinimapIcon
 {
-    // private static readonly List<Vector3> CurrentBossPositions = [];
-
     [HarmonyPostfix, UsedImplicitly]
     private static void Postfix(Minimap __instance)
     {
@@ -32,17 +30,16 @@ file static class InsertMinimapIcon
         {
             while (Minimap.instance)
             {
-                if (EventSpawnTimer.Value > 0)
+                yield return new WaitForSeconds(2);
+
+                if (EventSpawnTimer.Value <= 0) yield return new WaitForSeconds(1);
+                else
                 {
                     var nextBossSpawn = EventSpawnTimer.Value * 60 -
-                                        (int)ZNet.instance.GetTimeSeconds() %
-                                        (EventSpawnTimer.Value * 60) - 1;
+                                        (int)ZNet.instance.GetTimeSeconds() % (EventSpawnTimer.Value * 60) - 1;
                     var timeSpan = TimeSpan.FromSeconds(nextBossSpawn);
                     bossTimer.text = Localization.instance.Localize("$cc_next_event_spawn",
-                        timeSpan.ToString("c"));
-                    Debug($"{string.Format("$cc_next_event_spawn".Localize(), timeSpan)}");
-
-                    // CurrentBossPositions.Clear();
+                        timeSpan.ToHumanReadableString());
 
                     foreach (var pin in __instance.m_pins.Where(p => Icons.ContainsValue(p.m_icon)))
                     {
@@ -56,17 +53,10 @@ file static class InsertMinimapIcon
                         }
 
                         if (pin.m_NamePinData.PinNameGameObject)
-                        {
                             pin.m_NamePinData.PinNameText.text = pin.m_name;
-                        }
-
-                        // CurrentBossPositions.Add(pin.m_pos);
                     }
                 }
-
-                yield return new WaitForSeconds(1);
             }
-            // ReSharper disable once IteratorNeverReturns
         }
     }
 }

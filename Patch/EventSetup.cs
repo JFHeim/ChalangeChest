@@ -9,6 +9,7 @@ public static class EventSetup
         Debug("Initializing EventSetup...");
         Events.Add(new EventData("cc_Event_Normal"));
 
+        // TODO: add more difficulties
         EventSpawn.Icons[Difficulty.Normal] = RegisterPrefabs.Sprite("cc_IconNormal");
         
         Debug("Done EventSetup init");

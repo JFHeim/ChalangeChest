@@ -26,6 +26,31 @@ file static class AddRPCs
     }
 }
 
+[HarmonyPatch(typeof(ZoneSystem), nameof(ZoneSystem.GetLocation)), HarmonyWrapSafe]
+file static class LoadEventFromSaveFile
+{
+    [HarmonyPostfix, UsedImplicitly, HarmonyPatch([typeof(int)])]
+    private static void PostfixHash(int hash, ref ZoneSystem.ZoneLocation __result)
+    {
+        //TODO: LoadEventFromSaveFile hash
+        // if()
+    }
+
+    [HarmonyPostfix, UsedImplicitly, HarmonyPatch([typeof(string)])]
+    private static void PostfixName(string name, ref ZoneSystem.ZoneLocation __result)
+    {
+        if (__result != null) return;
+        var difficulty = name.GetDifficultyFromPrefab();
+        if (difficulty is null) return;
+        __result = new ZoneSystem.ZoneLocation
+        {
+            m_iconAlways = true,
+            m_prefabName = Locations[difficulty.Value].name,
+            m_prefab = locationReferences[difficulty.Value],
+        };
+    }
+}
+
 [HarmonyPatch(typeof(ZNetScene), nameof(ZNetScene.Awake))]
 file static class CachePrefabs
 {

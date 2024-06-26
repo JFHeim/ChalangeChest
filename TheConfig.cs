@@ -67,14 +67,14 @@ public static class TheConfig
         {
             var difficulty = (Difficulty)Enum.Parse(typeof(Difficulty), difficultyName);
             _chestDrops.Add(difficulty, config("Chest Drop",
-                $"Difficulty - {difficultyName}", ":1:2:1", new ConfigDescription(
+                $"Difficulty - {difficultyName}", "Coin:1:2:1", new ConfigDescription(
                     "This items will be in chest", null,
                     new ConfigurationManagerAttributes { CustomDrawer = DrawChestItems, Order = --order })));
             ChestDrops.Add(difficulty, () => new SerializedDrops(_chestDrops[difficulty].Value).Items);
             HidedChestDrops.Add(difficultyName);
 
             _eventMobs.Add(difficulty, config("Event Mobs",
-                $"Difficulty - {difficultyName}", ":5:15:1:1:3", new ConfigDescription(
+                $"Difficulty - {difficultyName}", "Goblin:5:15:1:1:3", new ConfigDescription(
                     "These mobs will be spawned\nLevel: 1 = no star, 2 = 1 star, 3 = 2 stars", null,
                     new ConfigurationManagerAttributes { CustomDrawer = DrawEventMobs, Order = --order })));
             EventMobs.Add(difficulty, () => new SerializedMobs(_eventMobs[difficulty].Value).Mobs);

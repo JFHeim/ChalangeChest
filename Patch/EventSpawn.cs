@@ -209,6 +209,7 @@ public class EventSpawn
         List<ZDO> zdos = null;
 
         var locationsToRemove = ZoneSystem.instance.m_locationInstances
+            .Where(p => p.Value.m_location.m_prefabName.StartsWith("cc_Event_"))
             .Select(x => x.Value.m_position.RoundCords())
             .Where(p => p.y < 1 + (int)ZNet.instance.GetTimeSeconds())
             .Select(x => x.ToV2())
@@ -227,7 +228,6 @@ public class EventSpawn
                 var currentTime = ZNet.instance.GetTimeSeconds() + 5;
                 zdos = zdos.Where(x => x.GetLong("ChallengeChestTime", long.MaxValue) < currentTime)
                     .ToList();
-                Debug($"CheckDespawnEnumerator Found {zdos.Count} ZDOs in location {locationPos} area to destroy");
                 foreach (var zdo in zdos)
                 {
                     zdo.SetOwner(ZDOMan.instance.m_sessionID);

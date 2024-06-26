@@ -2,16 +2,11 @@ namespace ChallengeChest.Patch;
 
 public static class EventSetup
 {
-    private static readonly List<EventData> Events = [];
-    
     public static void Init()
     {
         Debug("Initializing EventSetup...");
-        Events.Add(new EventData("cc_Event_Normal"));
+        new EventData("cc_Event_Normal", "cc_IconNormal");
 
-        // TODO: add more difficulties
-        EventSpawn.Icons[Difficulty.Normal] = RegisterPrefabs.Sprite("cc_IconNormal");
-        
         Debug("Done EventSetup init");
     }
 }

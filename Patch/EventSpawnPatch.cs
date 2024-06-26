@@ -29,12 +29,12 @@ file static class AddRPCs
 [HarmonyPatch(typeof(ZoneSystem), nameof(ZoneSystem.GetLocation)), HarmonyWrapSafe]
 file static class LoadEventFromSaveFile
 {
-    [HarmonyPostfix, UsedImplicitly, HarmonyPatch([typeof(int)])]
-    private static void PostfixHash(int hash, ref ZoneSystem.ZoneLocation __result)
-    {
-        //TODO: LoadEventFromSaveFile hash
-        // if()
-    }
+    // [HarmonyPostfix, UsedImplicitly, HarmonyPatch([typeof(int)])]
+    // private static void PostfixHash(int hash, ref ZoneSystem.ZoneLocation __result)
+    // {
+    //     //TODO: LoadEventFromSaveFile hash
+    //     // if()
+    // }
 
     [HarmonyPostfix, UsedImplicitly, HarmonyPatch([typeof(string)])]
     private static void PostfixName(string name, ref ZoneSystem.ZoneLocation __result)

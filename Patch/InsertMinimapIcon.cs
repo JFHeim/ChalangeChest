@@ -9,10 +9,10 @@ public static class InsertMinimapIcon
     [HarmonyPostfix, UsedImplicitly]
     private static void Postfix(Minimap __instance)
     {
-        foreach (var kv in Icons)
+        foreach (var kv in EventData.Events)
         {
             __instance.m_locationIcons.Add(new Minimap.LocationSpriteData
-                { m_icon = kv.Value, m_name = Locations[kv.Key].name });
+                { m_icon = kv.Value.Icon, m_name = Locations[kv.Key].name });
         }
 
         bossTimer = Instantiate(__instance.m_largeRoot.transform.Find("KeyHints/keyboard_hints/AddPin/Label"),
@@ -41,7 +41,10 @@ public static class InsertMinimapIcon
                     bossTimer.text = Localization.instance.Localize("$cc_next_event_spawn",
                         timeSpan.ToHumanReadableString());
 
-                    foreach (var pin in __instance.m_pins.Where(p => Icons.ContainsValue(p.m_icon)))
+                    foreach (var pin in __instance.m_pins
+                                 .Where(p => EventData.Events
+                                     .Select(x => x.Value.Icon).ToList()
+                                     .Contains(p.m_icon)))
                     {
                         pin.m_name = TimeSpan.FromSeconds((int)pin.m_pos.y - (int)ZNet.instance.GetTimeSeconds())
                             .ToString("c");

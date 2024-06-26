@@ -10,7 +10,6 @@ public class EventSpawn
     public static readonly HashSet<int> PlayerBasePieces = [];
     public static readonly Dictionary<Difficulty, Location> Locations = new();
     public static Dictionary<Difficulty, SoftReference<GameObject>> locationReferences = new();
-    public static readonly Dictionary<Difficulty, Sprite> Icons = new();
     public static TextMeshProUGUI bossTimer = null!;
 
     private static DateTime _lastBossSpawn = DateTime.MinValue;
@@ -19,7 +18,7 @@ public class EventSpawn
     {
         Debug("Initializing EventSpawn");
 
-        foreach (var kv in Icons)
+        foreach (var kv in EventData.Events)
             Locations.Add(kv.Key, RegisterPrefabs.Prefab(kv.Key.Prefab()).GetComponent<Location>());
 
         Debug("Done EventSpawn init");
@@ -65,20 +64,25 @@ public class EventSpawn
         if (pos is null) return;
         var despawnTime = ZNet.instance.GetTime().AddMinutes(TimeLimit.Value).Ticks / 10000000L;
 
-        var difficulty = Icons.Keys.ToList()[Random.Range(0, Min(0, Icons.Count - 1))];
+        var difficulty = EventData.Events.Keys.ToList()[Random.Range(0, Min(0, EventData.Events.Count - 1))];
 
         ZoneSystem.instance.RegisterLocation(new ZoneSystem.ZoneLocation
         {
             m_iconAlways = true,
             m_prefabName = Locations[difficulty].name,
             m_prefab = locationReferences[difficulty],
+            m_name = Locations[difficulty].name
         }, pos.Value with { y = despawnTime }, true);
-        // var locationInstance = ZoneSystem.instance.m_locationInstances[pos.Value.GetZone()];
-        // locationInstance.m_placed = true;
-        // ZoneSystem.instance.m_locationInstances[pos.Value.GetZone()] = locationInstance;
 
         Debug("SpawnBoss 1");
-        SpawnEventLocation(pos.Value, difficulty, despawnTime);
+        var locationComponent = locationReferences[difficulty].Asset?.GetComponent<Location>();
+        if (locationComponent is null)
+        {
+            DebugError($"Could not find location component for {difficulty}. Aborting");
+            return;
+        }
+
+        SpawnEventLocation(pos.Value, difficulty, despawnTime, locationComponent.GetMaxRadius());
         _lastBossSpawn = ZNet.instance.GetTime();
         BroadcastMinimapUpdate();
         Debug("SpawnBoss finish");
@@ -273,22 +277,22 @@ public class EventSpawn
             foreach (var drop in ChestDrops[difficulty]())
             {
                 if (Random.value > drop.ChanceToDropAny) continue;
-                var itemPrefab = ObjectDB.instance.GetItemPrefab(drop.ItemName);
+                var itemPrefab = ObjectDB.instance.GetItemPrefab(drop.PrefabName);
                 if (!itemPrefab)
                 {
-                    DebugWarning($"Failed to find item '{drop.ItemName}'");
+                    DebugWarning($"Failed to find item '{drop.PrefabName}'");
                     continue;
                 }
 
                 if (drop.AmountMin < 1)
                 {
-                    DebugWarning($"Invalid min amount '{drop.AmountMin}' for '{drop.ItemName}'");
+                    DebugWarning($"Invalid min amount '{drop.AmountMin}' for '{drop.PrefabName}'");
                     continue;
                 }
 
                 if (drop.AmountMax < 1)
                 {
-                    DebugWarning($"Invalid max amount '{drop.AmountMax}' for '{drop.ItemName}'");
+                    DebugWarning($"Invalid max amount '{drop.AmountMax}' for '{drop.PrefabName}'");
                     continue;
                 }
 
@@ -297,7 +301,7 @@ public class EventSpawn
         }
     }
 
-    public static void SpawnEventLocation(Vector3 pos, Difficulty difficulty, long despawnTime)
+    public static void SpawnEventLocation(Vector3 pos, Difficulty difficulty, long despawnTime, float range)
     {
         var prefab = Locations[difficulty].gameObject;
         var rot = Quaternion.identity;
@@ -336,6 +340,29 @@ public class EventSpawn
 
         foreach (var randomSpawn in randomSpawns) randomSpawn.Reset();
         foreach (var netView in zObjs) netView.gameObject.SetActive(true);
+
+        foreach (var mob in EventMobs[difficulty]())
+        {
+            if (Random.value > mob.ChanceToSpawnAny) continue;
+            var hash = mob.PrefabName.GetStableHashCode();
+            var count = Random.Range(mob.AmountMin, mob.AmountMax + 1);
+            for (var i = 0; i < count; i++)
+            {
+                var worldPosition = pos + Random.insideUnitSphere * range;
+                worldPosition.y = WorldGenerator.instance.GetHeight(pos.x, pos.z);
+                var instance = ZDOMan.instance.CreateNewZDO(worldPosition, hash);
+                instance.SetPrefab(hash);
+                instance.SetPosition(worldPosition);
+                instance.Set("ChallengeChestTime", despawnTime);
+                instance.Set("ChallengeChestPos", pos.RoundCords() with { y = 0 });
+                instance.Set(ZDOVars.s_level, Random.Range(mob.LevelMin, mob.LevelMax + 1));
+                instance.Persistent = true;
+
+                //Boost
+
+                DebugWarning($"Spawned {instance}");
+            }
+        }
 
         SnapToGround.SnappAll();
     }

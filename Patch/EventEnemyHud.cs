@@ -1,4 +1,5 @@
 using HarmonyLib;
+using UnityEngine.UI;
 
 namespace ChallengeChest.Patch;
 
@@ -19,14 +20,25 @@ public class EventEnemyHud
             var guiRect = hud.m_gui.GetComponent<RectTransform>();
             var nameRect = hud.m_name.GetComponent<RectTransform>();
             if (!guiRect || !nameRect) continue;
-            var health = hud.m_gui.transform.Find("Health");
-            if (health)
-            {
-            }
+            // var health = hud.m_gui.transform.Find("Health");
+            // if (health) { }
 
-            var stars = hud.m_gui.transform.Find("Stars");
-            if (stars != null)
+            var alert = hud.m_gui.transform.Find("Alerted");
+            if (alert != null) alert.gameObject.SetActive(false);
+
+            var star = hud.m_gui.transform.FindChildByName("star");
+            if (star && alert)
             {
+                var newStart = Instantiate(star, hud.m_gui.transform);
+                newStart.localPosition = alert.localPosition;
+                newStart.localScale = new Vector3(1.5f, 1.5f, 1.5f);
+                var icon = RegisterPrefabs.Sprite("cc_EventMobIcon");
+                if (icon)
+                {
+                    Destroy(newStart.GetComponent<Sprite>());
+                    var image = newStart.transform.FindChildByName("star (1)").gameObject.AddComponent<Image>();
+                    image.sprite = icon;
+                }
             }
         }
     }

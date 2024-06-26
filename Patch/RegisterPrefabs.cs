@@ -1,4 +1,5 @@
-﻿using HarmonyLib;
+﻿using BepInEx;
+using HarmonyLib;
 using static ChallengeChest.Patch.RegisterPrefabs;
 
 namespace ChallengeChest.Patch;
@@ -11,7 +12,18 @@ public static class RegisterPrefabs
 
     public static void LoadAll()
     {
-        if (!bundle) bundle = LoadAssetBundle(ModName.ToLower());
+        if (!bundle)
+        {
+            var path = Path.Combine(Paths.PluginPath, $"{ModName}_Assets", $"{ModName.ToLower()}.bundle");
+            if (!File.Exists(path))
+            {
+                GetPlugin().Logger.LogFatal($"No asset bundle found! Should be at {path}");
+                return;
+            }
+
+            bundle = AssetBundle.LoadFromFile(path);
+        }
+
         Assets.Clear();
         Assets.AddRange(bundle.LoadAllAssets());
         foreach (var name in Assets) Debug($"Registering {name}");

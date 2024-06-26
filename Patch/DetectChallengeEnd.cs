@@ -6,15 +6,18 @@ namespace ChallengeChest.Patch;
 file static class DetectChallengeEnd
 {
     [HarmonyPrefix, UsedImplicitly]
-    private static void Prefix(Character __instance)
+    private static void NoDrop(Character __instance)
     {
         if (!__instance.m_nview.IsOwner()) return;
         var eventPos = __instance.m_nview.GetZDO().GetVec3("ChallengeChestPos", Vector3.zero).ToV2();
         if (eventPos is { x: 0, y: 0 }) return;
 
-        var drop = __instance.GetComponent<CharacterDrop>();
-        //TODO: mob drop from config
-        drop.m_drops?.Clear();
+        if (!EventMobDrop.Value)
+        {
+            var drop = __instance.GetComponent<CharacterDrop>();
+            //TODO: mob drop from config
+            drop.m_drops?.Clear();
+        }
 
         Logic(eventPos, __instance);
     }

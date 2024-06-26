@@ -127,13 +127,11 @@
         <None Remove=".gitignore" />
         <None Remove=".gitattributes" />
         <None Remove="LICENSE" />
+        <None Remove="challengechest.bundle" />
     </ItemGroup>
 
     <ItemGroup>
       <None Remove="challengechest" />
-      <EmbeddedResource Include="challengechest">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </EmbeddedResource>
       <None Remove="translations\English.yml" />
       <EmbeddedResource Include="translations\English.yml">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>

@@ -1,5 +1,5 @@
 using HarmonyLib;
-using static ChallengeChest.Patch.EventSpawn;
+using static ChallengeChest.EventSpawn;
 
 namespace ChallengeChest.Patch;
 

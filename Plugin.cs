@@ -10,7 +10,7 @@ internal class Plugin : BaseUnityPlugin
 {
     private const string ModName = "ChallengeChest",
         ModAuthor = "Frogger",
-        ModVersion = "0.1.2",
+        ModVersion = "0.1.3",
         ModGuid = $"com.{ModAuthor}.{ModName}";
 
 

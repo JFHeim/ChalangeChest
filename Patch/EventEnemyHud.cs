@@ -27,19 +27,15 @@ public class EventEnemyHud
             if (alert != null) alert.gameObject.SetActive(false);
 
             var star = hud.m_gui.transform.FindChildByName("star");
-            if (star && alert)
-            {
-                var newStart = Instantiate(star, hud.m_gui.transform);
-                newStart.position = new Vector3(star.position.x, alert.position.y, alert.position.z);
-                newStart.localScale = new Vector3(1.5f, 1.5f, 1.5f);
-                var icon = RegisterPrefabs.Sprite("cc_EventMobIcon");
-                if (icon)
-                {
-                    Destroy(newStart.GetComponent<Sprite>());
-                    var image = newStart.transform.FindChildByName("star (1)").gameObject.AddComponent<Image>();
-                    image.sprite = icon;
-                }
-            }
+            if (!star || !alert) continue;
+            var newStart = Instantiate(star, hud.m_gui.transform);
+            newStart.position = new Vector3(star.position.x, alert.position.y, alert.position.z);
+            newStart.localScale = new Vector3(1.5f, 1.5f, 1.5f);
+            var icon = RegisterPrefabs.Sprite("cc_EventMobIcon");
+            if (!icon) continue;
+            Destroy(newStart.GetComponent<Sprite>());
+            var image = newStart.transform.FindChildByName("star (1)").gameObject.AddComponent<Image>();
+            image.sprite = icon;
         }
     }
 }

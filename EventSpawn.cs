@@ -1,8 +1,9 @@
-﻿using HarmonyLib;
+﻿using ChallengeChest.Patch;
+using HarmonyLib;
 using SoftReferenceableAssets;
 using static Utils;
 
-namespace ChallengeChest.Patch;
+namespace ChallengeChest;
 
 [HarmonyPatch, HarmonyWrapSafe]
 public class EventSpawn

@@ -1,8 +1,6 @@
 using System.Globalization;
-using System.Reflection;
 using BepInEx.Bootstrap;
 using BepInEx.Configuration;
-using ChallengeChest.Patch;
 using HarmonyLib;
 using Biome = Heightmap.Biome;
 
@@ -582,24 +580,4 @@ file static class FindConfigManager
             ? null
             : Chainloader.ManagerObject.GetComponent(configManagerType);
     }
-}
-
-public struct ChestDrop
-{
-    public string PrefabName;
-    public int AmountMin;
-    public int AmountMax;
-    public float ChanceToDropAny;
-}
-
-public struct EventMob
-{
-    public string PrefabName;
-    public int AmountMin;
-    public int AmountMax;
-    public float ChanceToSpawnAny;
-    public int LevelMin;
-    public int LevelMax;
-
-    //TODO: mob boosts like more or less health, more or less damage etc.
 }

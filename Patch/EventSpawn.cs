@@ -274,7 +274,7 @@ public class EventSpawn
         void GenerateItems()
         {
             inventory = new Inventory(prefab.m_name, prefab.m_bkg, prefab.m_width, prefab.m_height);
-            foreach (var drop in ChestDrops[difficulty]())
+            foreach (var drop in GetChestDrops(WorldGenerator.instance.GetBiome(zdo.GetPosition()), difficulty))
             {
                 if (Random.value > drop.ChanceToDropAny) continue;
                 var itemPrefab = ObjectDB.instance.GetItemPrefab(drop.PrefabName);
@@ -341,11 +341,15 @@ public class EventSpawn
         foreach (var randomSpawn in randomSpawns) randomSpawn.Reset();
         foreach (var netView in zObjs) netView.gameObject.SetActive(true);
 
-        foreach (var mob in EventMobs[difficulty]())
+        foreach (var mob in GetEventMobs(WorldGenerator.instance.GetBiome(pos), difficulty))
         {
-            if (Random.value > mob.ChanceToSpawnAny) continue;
+            var random = Random.value > mob.ChanceToSpawnAny;
             var hash = mob.PrefabName.GetStableHashCode();
             var count = Random.Range(mob.AmountMin, mob.AmountMax + 1);
+            Debug(!random
+                ? $"Trying to spawn {count} {mob.PrefabName}"
+                : $"Skipping {mob.PrefabName} because it's random"); 
+            if (random) continue;
             for (var i = 0; i < count; i++)
             {
                 var worldPosition = pos + Random.insideUnitSphere * range;
@@ -360,7 +364,7 @@ public class EventSpawn
 
                 //Boost
 
-                DebugWarning($"Spawned {instance}");
+                DebugWarning($"Spawned {instance} ({mob.PrefabName})");
             }
         }
 

@@ -4,13 +4,15 @@ using BepInEx.Bootstrap;
 using BepInEx.Configuration;
 using ChallengeChest.Patch;
 using HarmonyLib;
+using Biome = Heightmap.Biome;
 
 namespace ChallengeChest;
 
 public static class TheConfig
 {
-    private static readonly HashSet<string> HidedChestDrops = [];
-    private static readonly HashSet<string> HidedEventMobs = [];
+    private static readonly HashSet<(Biome biome, Difficulty difficulty)> HidedChestDrops = [];
+    private static readonly HashSet<(Biome biome, Difficulty difficulty)> HidedEventMobs = [];
+    private static readonly HashSet<Biome> HidedEventBiomes = [];
 
     public static ConfigEntry<int> EventSpawnTimer { get; private set; }
     public static ConfigEntry<int> SpawnMinDistance { get; private set; }
@@ -21,11 +23,9 @@ public static class TheConfig
     public static ConfigEntry<bool> EventMobDrop { get; private set; }
     public static ConfigEntry<bool> ForcePvp { get; private set; }
 
-    private static readonly Dictionary<Difficulty, ConfigEntry<string>> _chestDrops = [];
-    public static readonly Dictionary<Difficulty, Func<List<ChestDrop>>> ChestDrops = [];
+    private static readonly Dictionary<(Biome, Difficulty), ConfigEntry<string>> ChestDrops = [];
 
-    private static readonly Dictionary<Difficulty, ConfigEntry<string>> _eventMobs = [];
-    public static readonly Dictionary<Difficulty, Func<List<EventMob>>> EventMobs = [];
+    private static readonly Dictionary<(Biome, Difficulty), ConfigEntry<string>> EventMobs = [];
 
     public static void Init()
     {
@@ -63,25 +63,120 @@ public static class TheConfig
 
         MapDisplayOffset.SettingChanged += (_, _) => EventSpawn.UpdateTimerPosition();
 
-        foreach (var difficultyName in Enum.GetNames(typeof(Difficulty)))
+        var biomeNames = Enum.GetNames(typeof(Biome)).Where(x => x != "None").ToList();
+        for (var i = 0; i < biomeNames.Count; i++)
         {
-            var difficulty = (Difficulty)Enum.Parse(typeof(Difficulty), difficultyName);
-            _chestDrops.Add(difficulty, config("Chest Drop",
-                $"Difficulty - {difficultyName}", "Coin:1:2:1", new ConfigDescription(
-                    "This items will be in chest", null,
-                    new ConfigurationManagerAttributes { CustomDrawer = DrawChestItems, Order = --order })));
-            ChestDrops.Add(difficulty, () => new SerializedDrops(_chestDrops[difficulty].Value).Items);
-            HidedChestDrops.Add(difficultyName);
+            var biomeName = biomeNames[i];
+            var biome = (Biome)Enum.Parse(typeof(Biome), biomeName);
+            foreach (var difficultyName in Enum.GetNames(typeof(Difficulty)))
+            {
+                var category = $"{i}. Biome - {biomeName}";
+                var difficulty = (Difficulty)Enum.Parse(typeof(Difficulty), difficultyName);
 
-            _eventMobs.Add(difficulty, config("Event Mobs",
-                $"Difficulty - {difficultyName}", "Goblin:5:15:1:1:3", new ConfigDescription(
-                    "These mobs will be spawned\nLevel: 1 = no star, 2 = 1 star, 3 = 2 stars", null,
-                    new ConfigurationManagerAttributes { CustomDrawer = DrawEventMobs, Order = --order })));
-            EventMobs.Add(difficulty, () => new SerializedMobs(_eventMobs[difficulty].Value).Mobs);
-            HidedEventMobs.Add(difficultyName);
+                ChestDrops.Add((biome, difficulty), config(category,
+                    $"{difficultyName} - Chest Drops", GetDefaultDrops(biome, difficulty),
+                    new ConfigDescription(
+                        "This items will be in chest", null,
+                        new ConfigurationManagerAttributes { CustomDrawer = DrawChestItems, Order = --order })));
+
+                HidedChestDrops.Add((biome, difficulty));
+
+                EventMobs.Add((biome, difficulty), config(category,
+                    $"{difficultyName} - Event Mobs", GetDefaultMobs(biome, difficulty),
+                    new ConfigDescription(
+                        "These mobs will be spawned\nLevel: 1 = no star, 2 = 1 star, 3 = 2 stars", null,
+                        new ConfigurationManagerAttributes { CustomDrawer = DrawEventMobs, Order = --order })));
+                HidedEventMobs.Add((biome, difficulty));
+            }
+
+            HidedEventBiomes.Add(biome);
         }
+
+        UpdateBiomeHide();
     }
 
+    // ReSharper disable once UnusedParameter.Local
+    private static string GetDefaultMobs(Biome biome, Difficulty difficulty) =>
+        biome switch
+        {
+            //TODO: Мне лень думать над дефолтными мобами в зависимости от сложности 🥺 памагитЯ плиз
+            Biome.Meadows => "Greyling:5:12:1:1:3," +
+                             "Greydwarf_Elite:1:1:0.3," +
+                             "Boar:2:5:0.8:1:3," +
+                             "Neck:1:4:0.8:1:3",
+            Biome.Swamp => "Blob:2:6:1:1:3," +
+                           "BlobElite:2:3:0.7:1:2," +
+                           "Draugr:1:8:0.8:1:3," +
+                           "Draugr_Elite:1:3:0.6:1:2," +
+                           "Wraith:1:2:0.9:1:2," +
+                           "Abomination:1:1:0.3",
+            Biome.Mountain => "Wolf:3:6:0.8:1:3," +
+                              "Hatchling:1:3:0.8:1:2," +
+                              "StoneGolem:1:2:0.6," +
+                              "Fenring:1:2:0.6," +
+                              "Ulv:1:2:0.6," +
+                              "Fenring_Cultist:1:2:0.6," +
+                              "Bat:1:6:0.8:1:2," +
+                              "Fenring_Cultist_Hildir:1:1:0.2",
+            Biome.BlackForest => "Greydwarf:5:10:0.8:1:3," +
+                                 "Greydwarf_Elite:1:3:1:1:3," +
+                                 "Greydwarf_Shaman:1:3:0.8:1:3," +
+                                 "Skeleton:5:10:1:0.7:3," +
+                                 "Troll:1:1:0.4",
+            Biome.Plains => "Goblin:2:6:1:1:3," +
+                            "GoblinArcher:2:6:1:1:3," +
+                            "Lox:1:3:0.7:1:2," +
+                            "BlobTar:1:3:0.8:1:3," +
+                            "GoblinBrute:1:3:0.6:1:2," +
+                            "GoblinShaman:1:1:0.9:1:2," +
+                            "GoblinBruteBros:1:1:0.3",
+            Biome.AshLands => "Charred_Melee:2:6:1:1:3," +
+                              "Charred_Archer:2:6:1:1:3," +
+                              "charred_mage:2:6:1:1:3," +
+                              "Charred_Twitcher:2:6:1:1:3," +
+                              "asksvin:1:3:0.8:1:3," +
+                              "morgen:1:3:0.6:1:2," +
+                              "FallenValkyrie:1:1:0.3",
+            Biome.Mistlands => "Seeker:2:6:1:1:3," +
+                               "SeekerBrood:2:6:0.6:1:3," +
+                               "Tick:2:6:0.7:1:3," +
+                               "SeekerBrute:2:6:1:1:3," +
+                               "Gjall:1:1:0.6",
+            // Heightmap.Biome.DeepNorth => throw new NotImplementedException(),
+            Biome.All => "Boar:1:1:1:1:1",
+            _ => ""
+        };
+
+    // ReSharper disable once UnusedParameter.Local
+    private static string GetDefaultDrops(Biome biome, Difficulty difficulty) =>
+        biome switch
+        {
+            //TODO: Мне лень думать над дефолтным дропом в зависимости от сложности 🥺 памагитЯ плиз
+            //TODO: Мне лень думать над дефолтным дропом 🥺 памагитЯ
+            Biome.All => "Coins:1:25:1," +
+                         "Ruby:1:25:1",
+            _ => ""
+        };
+
+    public static List<ChestDrop> GetChestDrops(Biome biome, Difficulty difficulty) =>
+        ChestDrops
+            .Where(a => a.Key.Item2 == difficulty)
+            .Where(a => a.Key.Item1 == Biome.All || a.Key.Item1 == biome)
+            .Select(a => a.Value.Value)
+            .Select(a => new SerializedDrops(a).Items)
+            .SelectMany(a => a)
+            .ToList();
+
+    public static List<EventMob> GetEventMobs(Biome biome, Difficulty difficulty) =>
+        EventMobs
+            .Where(a => a.Key.Item2 == difficulty)
+            .Where(a => a.Key.Item1 == Biome.All || a.Key.Item1 == biome)
+            .Select(a => a.Value)
+            .Select(a => new SerializedMobs(a.Value).Mobs)
+            .SelectMany(a => a)
+            .ToList();
+
+    // ReSharper disable once NotAccessedField.Global
     [CanBeNull] internal static object configManager;
 
     private static void DrawTime(ConfigEntryBase cfg)
@@ -92,6 +187,7 @@ public static class TheConfig
                     ? (bool?)a.GetType().GetField("ReadOnly")?.GetValue(a)
                     : null).FirstOrDefault(v => v != null) ?? false;
 
+        // ReSharper disable once RedundantAssignment
         var wasUpdated = false;
         var time = TimeSpan.FromMinutes(float.Parse(cfg.BoxedValue.ToString()));
 
@@ -116,15 +212,20 @@ public static class TheConfig
                     ? (bool?)a.GetType().GetField("ReadOnly")?.GetValue(a)
                     : null).FirstOrDefault(v => v != null) ?? false;
 
-
-        var difficultyName = cfg.Definition.Key.Replace("Difficulty - ", "");
-        var isHided = HidedChestDrops.Contains(difficultyName);
+        var difficultyName = cfg.Definition.Key.Split([" - Chest Drops"], StringSplitOptions.RemoveEmptyEntries)[0]
+            .Replace(" ", "");
+        var biomeName = cfg.Definition.Section.Split([". Biome - "], StringSplitOptions.RemoveEmptyEntries)[1]
+            .Replace(" ", "");
+        var difficulty = (Difficulty)Enum.Parse(typeof(Difficulty), difficultyName);
+        var biome = (Biome)Enum.Parse(typeof(Biome), biomeName);
+        var isHided = HidedChestDrops.Contains((biome, difficulty));
+        var isBiomeHided = HidedEventBiomes.Contains(biome);
 
         List<ChestDrop> newReqs = [];
         var wasUpdated = false;
 
         GUILayout.BeginVertical();
-        if (!isHided)
+        if (!isHided && !isBiomeHided)
         {
             foreach (var item in new SerializedDrops(cfg.BoxedValue.ToString()).Items)
             {
@@ -207,11 +308,12 @@ public static class TheConfig
 
         GUILayout.BeginHorizontal();
 
-        if (GUILayout.Button($"|@| {(isHided ? "Show chest drop" : "Hide")}",
-                new GUIStyle(GUI.skin.button) { fixedWidth = isHided ? 19 * 8 + 8 : 8 * 8 + 8 }) && !locked)
+
+        if (!isBiomeHided && GUILayout.Button($"|@| {(isHided ? "Show chest drop" : "Hide chest drop")}",
+                new GUIStyle(GUI.skin.button) { fixedWidth = 19 * 8 + 8 }) && !locked)
         {
-            if (isHided) HidedChestDrops.Remove(difficultyName);
-            else HidedChestDrops.Add(difficultyName);
+            if (isHided) HidedChestDrops.Remove((biome, difficulty));
+            else HidedChestDrops.Add((biome, difficulty));
         }
 
         GUILayout.EndHorizontal();
@@ -229,14 +331,20 @@ public static class TheConfig
                     : null).FirstOrDefault(v => v != null) ?? false;
 
 
-        var difficultyName = cfg.Definition.Key.Replace("Difficulty - ", "");
-        var isHided = HidedEventMobs.Contains(difficultyName);
+        var difficultyName = cfg.Definition.Key.Split([" - Event Mobs"], StringSplitOptions.RemoveEmptyEntries)[0]
+            .Replace(" ", "");
+        var biomeName = cfg.Definition.Section.Split([". Biome - "], StringSplitOptions.RemoveEmptyEntries)[1]
+            .Replace(" ", "");
+        var difficulty = (Difficulty)Enum.Parse(typeof(Difficulty), difficultyName);
+        var biome = (Biome)Enum.Parse(typeof(Biome), biomeName);
+        var isHided = HidedEventMobs.Contains((biome, difficulty));
+        var isBiomeHided = HidedEventBiomes.Contains(biome);
 
         List<EventMob> newReqs = [];
         var wasUpdated = false;
 
         GUILayout.BeginVertical();
-        if (!isHided)
+        if (!isHided && !isBiomeHided)
         {
             foreach (var mob in new SerializedMobs(cfg.BoxedValue.ToString()).Mobs)
             {
@@ -250,9 +358,6 @@ public static class TheConfig
                 var prefab = locked ? mob.PrefabName : newPrefab;
                 wasUpdated = wasUpdated || prefab != mob.PrefabName;
                 //TODO: textColor doesn't work so far
-                if (wasUpdated)
-                    prefabStyle.normal.textColor =
-                        ZNetScene.instance.GetPrefab(prefab) == null ? Color.red : Color.black;
 
                 GUILayout.EndHorizontal();
 
@@ -268,9 +373,6 @@ public static class TheConfig
                     wasUpdated = true;
                 }
 
-                if (wasUpdated)
-                    amountMinStyle.normal.textColor = amountMin < 0 ? Color.red : Color.black;
-
                 GUILayout.Label("/");
                 var amountMax = mob.AmountMax;
                 var amountMaxStyle = new GUIStyle(GUI.skin.textField) { fixedWidth = 78 };
@@ -281,9 +383,6 @@ public static class TheConfig
                     amountMax = newAmountMax;
                     wasUpdated = true;
                 }
-
-                if (wasUpdated)
-                    amountMaxStyle.normal.textColor = amountMax < 0 ? Color.red : Color.black;
 
                 GUILayout.EndHorizontal();
 
@@ -297,9 +396,6 @@ public static class TheConfig
                 GUILayout.Label($" {chance}%", chanceStyle);
                 var chanceToSpawnAny = locked ? mob.ChanceToSpawnAny : newChance;
                 wasUpdated = wasUpdated || !Approximately(chanceToSpawnAny, mob.ChanceToSpawnAny);
-
-                if (wasUpdated)
-                    chanceStyle.normal.textColor = chanceToSpawnAny is < 0 or > 1 ? Color.red : Color.black;
 
                 GUILayout.EndHorizontal();
 
@@ -315,9 +411,6 @@ public static class TheConfig
                     wasUpdated = true;
                 }
 
-                if (wasUpdated)
-                    levelMinStyle.normal.textColor = levelMin < 0 ? Color.red : Color.black;
-
                 GUILayout.Label("/");
                 var levelMax = mob.LevelMax;
                 var levelMaxStyle = new GUIStyle(GUI.skin.textField) { fixedWidth = 78 };
@@ -328,9 +421,6 @@ public static class TheConfig
                     levelMax = newLevelMax;
                     wasUpdated = true;
                 }
-
-                if (wasUpdated)
-                    levelMaxStyle.normal.textColor = levelMax < 0 ? Color.red : Color.black;
 
                 GUILayout.EndHorizontal();
 
@@ -349,7 +439,8 @@ public static class TheConfig
                         LevelMax = levelMax,
                     });
 
-                if (GUILayout.Button("|+| Add", new GUIStyle(GUI.skin.button) { fixedWidth = 7 * 8 + 8 }) && !locked)
+                if (GUILayout.Button("|+| Add", new GUIStyle(GUI.skin.button) { fixedWidth = 7 * 8 + 8 }) &&
+                    !locked)
                 {
                     wasUpdated = true;
                     newReqs.Add(new EventMob
@@ -365,83 +456,117 @@ public static class TheConfig
 
                 GUILayout.EndHorizontal();
 
+
                 GUILayout.EndVertical();
             }
         }
 
-        GUILayout.BeginHorizontal();
+        GUILayout.BeginVertical();
 
-        if (GUILayout.Button($"|@| {(isHided ? "Show" : "Hide")}",
-                new GUIStyle(GUI.skin.button) { fixedWidth = isHided ? 8 * 8 + 8 : 8 * 8 + 8 }) && !locked)
+        if (!isBiomeHided &&
+            GUILayout.Button($"|@| {(isHided ? "Show mobs" : "Hide mobs")}",
+                new GUIStyle(GUI.skin.button) { fixedWidth = 13 * 8 + 8 }) && !locked)
         {
-            if (isHided) HidedEventMobs.Remove(difficultyName);
-            else HidedEventMobs.Add(difficultyName);
+            if (isHided) HidedEventMobs.Remove((biome, difficulty));
+            else HidedEventMobs.Add((biome, difficulty));
         }
 
-        GUILayout.EndHorizontal();
+        if (difficultyName == Difficulty.DeadlyPossible.ToString() &&
+            GUILayout.Button($"|@| {(isBiomeHided ? "Show biome" : "Hide biome")}",
+                new GUIStyle(GUI.skin.button) { fixedWidth = 14 * 8 + 8 }) && !locked)
+        {
+            if (isBiomeHided) HidedEventBiomes.Remove(biome);
+            else HidedEventBiomes.Add(biome);
+
+            UpdateBiomeHide();
+        }
+
+        GUILayout.EndVertical();
         GUILayout.EndVertical();
 
         if (wasUpdated) cfg.BoxedValue = new SerializedMobs(newReqs).ToString();
     }
 
-    private class SerializedDrops
+    private static void UpdateBiomeHide()
     {
-        public readonly List<ChestDrop> Items;
+        foreach (var pair in EventMobs)
+            ProcessCfg(pair.Value, pair.Key.Item1, pair.Key.Item2);
+        foreach (var pair in ChestDrops)
+            ProcessCfg(pair.Value, pair.Key.Item1, pair.Key.Item2, true);
 
-        public SerializedDrops(List<ChestDrop> items) => Items = items;
+        //call method BuildSettingList with no args
+        configManager?.GetType().GetMethod("BuildSettingList")?.Invoke(configManager, null);
+        return;
 
-        public SerializedDrops(string reqs)
+        void ProcessCfg(ConfigEntry<string> cfg, Biome biome, Difficulty difficulty, bool isChest = false)
         {
-            Items = reqs.Split(',').Select(r =>
-            {
-                var parts = r.Split(':');
-                var drop = new ChestDrop
-                {
-                    PrefabName = parts[0],
-                    AmountMin = parts.Length > 1 && int.TryParse(parts[1], out var amountMin) ? amountMin : 1,
-                    AmountMax = parts.Length > 2 && int.TryParse(parts[2], out var amountMax) ? amountMax : 1,
-                    ChanceToDropAny = parts.Length > 3 && float.TryParse(parts[3], out var chance) ? chance : 1f,
-                };
-
-                return drop;
-            }).ToList();
+            var isBiomeHided = HidedEventBiomes.Contains(biome);
+            if (cfg.Description.Tags.Length <= 0) return;
+            var tag = cfg.Description.Tags.ToList().OfType<ConfigurationManagerAttributes>().FirstOrDefault();
+            if (tag is null) return;
+            if (difficulty != Difficulty.DeadlyPossible || isChest) tag.Browsable = !isBiomeHided;
+            if (!isChest) tag.DispName = isBiomeHided ? "" : null;
         }
+    }
+}
 
-        public override string ToString() =>
-            string.Join(",", Items.Select(r =>
-                $"{r.PrefabName}:{r.AmountMin}:{r.AmountMax}:{r.ChanceToDropAny}"));
+file class SerializedDrops
+{
+    public readonly List<ChestDrop> Items;
+
+    public SerializedDrops(List<ChestDrop> items) => Items = items;
+
+    public SerializedDrops(string reqs)
+    {
+        Items = reqs.Split(',').Select(r =>
+        {
+            var parts = r.Split(':');
+            var drop = new ChestDrop
+            {
+                PrefabName = parts[0],
+                AmountMin = parts.Length > 1 && int.TryParse(parts[1], out var amountMin) ? amountMin : 1,
+                AmountMax = parts.Length > 2 && int.TryParse(parts[2], out var amountMax) ? amountMax : 1,
+                ChanceToDropAny = parts.Length > 3 && float.TryParse(parts[3], out var chance) ? chance : 1f,
+            };
+
+            return drop;
+        }).ToList();
     }
 
-    private class SerializedMobs
+    public override string ToString() =>
+        string.Join(",", Items.Select(r =>
+            $"{r.PrefabName}:{r.AmountMin}:{r.AmountMax}:{r.ChanceToDropAny}"));
+}
+
+file class SerializedMobs
+{
+    public readonly List<EventMob> Mobs;
+
+    public SerializedMobs(List<EventMob> mobs) => Mobs = mobs;
+
+    public SerializedMobs(string reqs)
     {
-        public readonly List<EventMob> Mobs;
-
-        public SerializedMobs(List<EventMob> mobs) => Mobs = mobs;
-
-        public SerializedMobs(string reqs)
+        Mobs = reqs.Split(',').Select(r =>
         {
-            Mobs = reqs.Split(',').Select(r =>
+            var parts = r.Split(':');
+            var drop = new EventMob
             {
-                var parts = r.Split(':');
-                var drop = new EventMob
-                {
-                    PrefabName = parts[0],
-                    AmountMin = parts.Length > 1 && int.TryParse(parts[1], out var amountMin) ? amountMin : 1,
-                    AmountMax = parts.Length > 2 && int.TryParse(parts[2], out var amountMax) ? amountMax : 1,
-                    ChanceToSpawnAny = parts.Length > 3 && float.TryParse(parts[3], out var chance) ? chance : 1f,
-                    LevelMin = parts.Length > 4 && int.TryParse(parts[4], out var levelMin) ? levelMin : 1,
-                    LevelMax = parts.Length > 5 && int.TryParse(parts[5], out var levelMax) ? levelMax : 2
-                };
+                PrefabName = parts[0],
+                AmountMin = parts.Length > 1 && int.TryParse(parts[1], out var amountMin) ? amountMin : 1,
+                AmountMax = parts.Length > 2 && int.TryParse(parts[2], out var amountMax) ? amountMax : 1,
+                ChanceToSpawnAny = parts.Length > 3 && float.TryParse(parts[3], out var chance) ? chance : 1f,
+                LevelMin = parts.Length > 4 && int.TryParse(parts[4], out var levelMin) ? levelMin : 1,
+                LevelMax = parts.Length > 5 && int.TryParse(parts[5], out var levelMax) ? levelMax : 2
+            };
 
-                return drop;
-            }).ToList();
-        }
-
-        public override string ToString() =>
-            string.Join(",", Mobs.Select(r =>
-                $"{r.PrefabName}:{r.AmountMin}:{r.AmountMax}:" +
-                $"{r.ChanceToSpawnAny}:{r.LevelMin}:{r.LevelMax}"));
+            return drop;
+        }).ToList();
     }
+
+    public override string ToString() =>
+        string.Join(",", Mobs.Select(r =>
+            $"{r.PrefabName}:{r.AmountMin}:{r.AmountMax}:" +
+            $"{r.ChanceToSpawnAny}:{r.LevelMin}:{r.LevelMax}"));
 }
 
 [HarmonyWrapSafe, HarmonyPatch(typeof(FejdStartup), nameof(FejdStartup.Awake))]

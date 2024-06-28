@@ -30,7 +30,7 @@ public class EventEnemyHud
             if (star && alert)
             {
                 var newStart = Instantiate(star, hud.m_gui.transform);
-                newStart.localPosition = alert.localPosition;
+                newStart.position = new Vector3(star.position.x, alert.position.y, alert.position.z);
                 newStart.localScale = new Vector3(1.5f, 1.5f, 1.5f);
                 var icon = RegisterPrefabs.Sprite("cc_EventMobIcon");
                 if (icon)

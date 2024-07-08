@@ -40,13 +40,14 @@ file static class LoadEventFromSaveFile
     private static void PostfixName(string name, ref ZoneSystem.ZoneLocation __result)
     {
         if (__result != null) return;
-        var difficulty = name.GetDifficultyFromPrefab();
-        if (difficulty is null) return;
+        if (!name.StartsWith("cc_")) return;
+        Debug($"LoadEventFromSaveFile name={name}");
         __result = new ZoneSystem.ZoneLocation
         {
             m_iconAlways = true,
-            m_prefabName = Locations[difficulty.Value].name,
-            m_prefab = locationReferences[difficulty.Value],
+            // m_prefabName = $"{EventData.PrefabName}__{difficulty.Value}",
+            m_prefabName = name,
+            m_prefab = EventData.locationReference,
         };
     }
 }

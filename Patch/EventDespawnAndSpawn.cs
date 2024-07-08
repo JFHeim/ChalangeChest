@@ -1,5 +1,6 @@
 using HarmonyLib;
 using static ChallengeChest.EventSpawn;
+using static ChallengeChest.Managers.LocalizationManager.Location.PrefabManager;
 
 namespace ChallengeChest.Patch;
 
@@ -9,9 +10,8 @@ file static class EventDespawnAndSpawn
     [HarmonyPostfix, UsedImplicitly]
     private static void Postfix(ZoneSystem __instance)
     {
-        if (locationReferences.Count == 0)
-            locationReferences = Locations.ToDictionary(kv => kv.Key,
-                kv => Managers.LocalizationManager.Location.PrefabManager.AddLoadedSoftReferenceAsset(kv.Value.gameObject));
+        if (!EventData.locationReference.m_name.IsGood())
+            EventData.locationReference = AddLoadedSoftReferenceAsset(EventData.Prefab);
 
         if (!ZNet.instance.IsServer()) return;
 
@@ -22,6 +22,8 @@ file static class EventDespawnAndSpawn
         {
             while (ZoneSystem.instance)
             {
+                yield return new WaitForSeconds(5);
+
                 if (EventSpawnTimer.Value <= 0)
                 {
                     yield return new WaitForSeconds(1);

@@ -1,6 +1,4 @@
-﻿using ChallengeChest.Patch;
-using HarmonyLib;
-using SoftReferenceableAssets;
+﻿using HarmonyLib;
 using static Utils;
 
 namespace ChallengeChest;
@@ -9,8 +7,6 @@ namespace ChallengeChest;
 public class EventSpawn
 {
     public static readonly HashSet<int> PlayerBasePieces = [];
-    public static readonly Dictionary<Difficulty, Location> Locations = new();
-    public static Dictionary<Difficulty, SoftReference<GameObject>> locationReferences = new();
     public static TextMeshProUGUI bossTimer = null!;
 
     private static DateTime _lastBossSpawn = DateTime.MinValue;
@@ -18,16 +14,11 @@ public class EventSpawn
     public static void Init()
     {
         Debug("Initializing EventSpawn");
-
-        foreach (var kv in EventData.Events)
-            Locations.Add(kv.Key, RegisterPrefabs.Prefab(kv.Key.Prefab()).GetComponent<Location>());
-
         Debug("Done EventSpawn init");
     }
 
     public static void BroadcastMinimapUpdate()
     {
-        Debug("BroadcastMinimapUpdate");
         ZoneSystem.instance.SendLocationIcons(ZRoutedRpc.Everybody);
         if (!Minimap.instance) return;
         Minimap.instance.UpdateLocationPins(10);
@@ -42,41 +33,46 @@ public class EventSpawn
 
     public static void UpdateTimerPosition()
     {
-        Debug("UpdateTimerPosition 0");
         if (!Minimap.instance) return;
         var rect = (RectTransform)Minimap.instance.m_largeRoot.transform.Find("IconPanel").transform;
         var anchoredPosition = rect.anchoredPosition;
         var rectTransform = bossTimer.GetComponent<RectTransform>();
-        Debug("UpdateTimerPosition 1");
         rectTransform.anchoredPosition = new Vector2(-anchoredPosition.x - 30,
             -anchoredPosition.y - 5 - MapDisplayOffset.Value);
         rectTransform.anchorMin = new Vector2(0, 1);
         rectTransform.anchorMax = new Vector2(0, 1);
         rectTransform.sizeDelta = rect.sizeDelta;
         rectTransform.pivot = new Vector2(0, 0);
-        Debug("UpdateTimerPosition finish");
     }
 
     public static void SpawnBoss(Vector3? pos = null)
     {
         Debug("SpawnBoss 0");
         if (_lastBossSpawn == ZNet.instance.GetTime()) return;
+        Debug("SpawnBoss 01");
         pos ??= GetRandomSpawnPoint();
+        Debug("SpawnBoss 02");
         if (pos is null) return;
+        Debug("SpawnBoss 03");
         var despawnTime = ZNet.instance.GetTime().AddMinutes(TimeLimit.Value).Ticks / 10000000L;
+        Debug("SpawnBoss 04");
 
-        var difficulty = EventData.Events.Keys.ToList()[Random.Range(0, Min(0, EventData.Events.Count - 1))];
+        var difficulties = Enum.GetValues(typeof(Difficulty)).Cast<Difficulty>().ToList();
+        Debug("SpawnBoss 05");
+        var difficulty = difficulties.ToList()[Random.Range(0, Min(0, difficulties.Count - 1))];
+        Debug("SpawnBoss 06");
 
         ZoneSystem.instance.RegisterLocation(new ZoneSystem.ZoneLocation
         {
             m_iconAlways = true,
-            m_prefabName = Locations[difficulty].name,
-            m_prefab = locationReferences[difficulty],
-            m_name = Locations[difficulty].name
+            m_prefabName = EventData.Icons[WorldGenerator.instance.GetBiome(pos.Value)].name,
+            m_prefab = EventData.locationReference,
+            m_name = difficulty.ToString(),
         }, pos.Value with { y = despawnTime }, true);
+        Debug("SpawnBoss 07");
 
         Debug("SpawnBoss 1");
-        var locationComponent = locationReferences[difficulty].Asset?.GetComponent<Location>();
+        var locationComponent = EventData.locationReference.Asset?.GetComponent<Location>();
         if (locationComponent is null)
         {
             DebugError($"Could not find location component for {difficulty}. Aborting");
@@ -91,7 +87,6 @@ public class EventSpawn
 
     private static Vector3? GetRandomSpawnPoint()
     {
-        Debug("GetRandomSpawnPoint 0");
         for (var i = 0; i < 10000; ++i)
         {
             retry:
@@ -195,7 +190,7 @@ public class EventSpawn
         chest.SetPosition(eventPos);
         if (location.m_location == null) return;
         Debug("HandleChallengeDone 2 populating chest");
-        PopulateChest(chest, location.m_location.m_prefabName.GetDifficultyFromPrefab().Value);
+        PopulateChest(chest, (Difficulty)Enum.Parse(typeof(Difficulty), location.m_location.m_name));
         Debug("HandleChallengeDone 3 spawning vfx");
         vfx = ZDOMan.instance.CreateNewZDO(chest.GetPosition(), VFXHash);
         vfx.SetPrefab(VFXHash);
@@ -210,7 +205,7 @@ public class EventSpawn
         List<ZDO> zdos = null;
 
         var locationsToRemove = ZoneSystem.instance.m_locationInstances
-            .Where(p => p.Value.m_location.m_prefabName.StartsWith("cc_Event_"))
+            .Where(p => p.Value.m_location.m_prefabName.StartsWith("cc_"))
             .Select(x => x.Value.m_position.RoundCords())
             .Where(p => p.y < 1 + (int)ZNet.instance.GetTimeSeconds())
             .Select(x => x.ToV2())
@@ -304,7 +299,7 @@ public class EventSpawn
 
     public static void SpawnEventLocation(Vector3 pos, Difficulty difficulty, long despawnTime, float range)
     {
-        var prefab = Locations[difficulty].gameObject;
+        var prefab = EventData.Prefab;
         var rot = Quaternion.identity;
 
         var zObjs = GetEnabledComponentsInChildren<ZNetView>(prefab).ToList();
@@ -349,7 +344,7 @@ public class EventSpawn
             var count = Random.Range(mob.AmountMin, mob.AmountMax + 1);
             Debug(!random
                 ? $"Trying to spawn {count} {mob.PrefabName}"
-                : $"Skipping {mob.PrefabName} because it's random"); 
+                : $"Skipping {mob.PrefabName} because it's random");
             if (random) continue;
             for (var i = 0; i < count; i++)
             {

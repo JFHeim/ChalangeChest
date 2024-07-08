@@ -1,26 +1,45 @@
 using ChallengeChest.Patch;
+using SoftReferenceableAssets;
 
 namespace ChallengeChest;
 
-public class EventData
+public static class EventData
 {
-    public static readonly Dictionary<Difficulty, EventData> Events = [];
+    public const string PrefabName = "cc_EventPrefab";
+    public static GameObject Prefab;
+    public static SoftReference<GameObject> locationReference = new();
+    public static Location Location;
+    public static readonly Dictionary<Heightmap.Biome, Sprite> Icons = [];
+    public static float Range = 30;
 
-    public readonly string PrefabName;
-    public readonly GameObject Prefab;
-    public readonly Difficulty Difficulty;
-    public readonly Sprite Icon;
-    public readonly float Range;
-
-    public EventData(string prefabName, string iconName)
+    public static void Init()
     {
-        PrefabName = prefabName;
-        Prefab = RegisterPrefabs.Prefab(prefabName);
-        Range = Prefab.GetComponent<Location>()?.GetMaxRadius() ?? 0f;
-        Icon = RegisterPrefabs.Sprite(iconName);
-        Difficulty = PrefabName.GetDifficultyFromPrefab().Value;
+        Debug("Initializing EventData...");
+        Prefab = RegisterPrefabs.Prefab(PrefabName);
+        Location = Prefab.GetComponent<Location>();
+        Range = Location?.GetMaxRadius() ?? 10f;
+        SetupIcons();
 
-        Events.Add(Difficulty, this);
-        Debug($"Loaded EventData {Prefab?.name ?? "null"}");
+        Debug("Initialized EventData");
+    }
+
+    private static void SetupIcons()
+    {
+        AddIcon(Heightmap.Biome.Meadows);
+        AddIcon(Heightmap.Biome.Swamp);
+        AddIcon(Heightmap.Biome.Mountain);
+        AddIcon(Heightmap.Biome.BlackForest);
+        AddIcon(Heightmap.Biome.Plains);
+        AddIcon(Heightmap.Biome.AshLands);
+        AddIcon(Heightmap.Biome.DeepNorth);
+        AddIcon(Heightmap.Biome.Ocean);
+        AddIcon(Heightmap.Biome.Mistlands);
+        return;
+
+        void AddIcon(Heightmap.Biome biome)
+        {
+            var spriteName = $"cc_Icon{biome.ToString()}";
+            Icons.Add(biome, RegisterPrefabs.Sprite(spriteName));
+        }
     }
 }

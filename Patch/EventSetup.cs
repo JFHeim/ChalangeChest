@@ -5,8 +5,7 @@ public static class EventSetup
     public static void Init()
     {
         Debug("Initializing EventSetup...");
-        new EventData("cc_Event_Normal", "cc_IconNormal");
-
+        EventData.Init();
         Debug("Done EventSetup init");
     }
 }

@@ -4,15 +4,16 @@ using static ChallengeChest.EventSpawn;
 namespace ChallengeChest.Patch;
 
 [HarmonyPatch(typeof(Minimap), nameof(Minimap.Awake))]
-public static class InsertMinimapIcon
+[HarmonyWrapSafe]
+file static class MinimapLabel
 {
     [HarmonyPostfix, UsedImplicitly]
     private static void Postfix(Minimap __instance)
     {
-        foreach (var kv in EventData.Events)
+        foreach (var pair in EventData.Icons)
         {
             __instance.m_locationIcons.Add(new Minimap.LocationSpriteData
-                { m_icon = kv.Value.Icon, m_name = Locations[kv.Key].name });
+                { m_icon = pair.Value, m_name = pair.Value.name });
         }
 
         bossTimer = Instantiate(__instance.m_largeRoot.transform.Find("KeyHints/keyboard_hints/AddPin/Label"),
@@ -42,9 +43,7 @@ public static class InsertMinimapIcon
                         timeSpan.ToHumanReadableString());
 
                     foreach (var pin in __instance.m_pins
-                                 .Where(p => EventData.Events
-                                     .Select(x => x.Value.Icon).ToList()
-                                     .Contains(p.m_icon)))
+                                 .Where(p => EventData.Icons.Values.Contains(p.m_icon)))
                     {
                         pin.m_name = TimeSpan.FromSeconds((int)pin.m_pos.y - (int)ZNet.instance.GetTimeSeconds())
                             .ToString("c");
@@ -60,6 +59,24 @@ public static class InsertMinimapIcon
                     }
                 }
             }
+        }
+    }
+}
+
+[HarmonyWrapSafe]
+file static class ShowMinimapIcon
+{
+    [HarmonyPatch(typeof(ZoneSystem), nameof(ZoneSystem.GetLocationIcons))]
+    [HarmonyPostfix, UsedImplicitly]
+    private static void GetLocationIconsPostfix(Minimap __instance, Dictionary<Vector3, string> icons)
+    {
+        for (var i = 0; i < icons.Count; i++)
+        {
+            var icon = icons.ElementAt(i);
+            if (icon.Value != EventData.PrefabName) continue;
+            var location = ZoneSystem.instance.m_locationInstances.Values.ToList().Find(x => x.m_position == icon.Key);
+            if (location.m_location == null || location.m_position == default) continue;
+            icons[icon.Key] = location.m_location.m_prefabName;
         }
     }
 }

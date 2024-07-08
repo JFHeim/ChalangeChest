@@ -3,10 +3,10 @@ using HarmonyLib;
 namespace ChallengeChest.Patch;
 
 [HarmonyPatch(typeof(Character), nameof(Character.OnDeath)), HarmonyWrapSafe]
-file static class DetectChallengeEnd
+file static class DetectChallengeEndAndEventMobDrop
 {
     [HarmonyPrefix, UsedImplicitly]
-    private static void NoDrop(Character __instance)
+    private static void Prefix(Character __instance)
     {
         if (!__instance.m_nview.IsOwner()) return;
         var eventPos = __instance.m_nview.GetZDO().GetVec3("ChallengeChestPos", Vector3.zero).ToV2();
@@ -35,6 +35,7 @@ file static class DetectChallengeEnd
             .Select(x => x.x).ToList();
         if (myEventMobsNearby is { Count: > 0 }) return;
 
+        Debug($"DetectChallengeEnd no local mobs, checking globally in world...");
         myEventMobsNearby = await ZoneSystem.instance.GetWorldObjectsAsync(zdo =>
             zdo.GetVec3("ChallengeChestPos", Vector3.zero).ToV2() == eventPos);
         if (myEventMobsNearby is { Count: > 0 }) return;

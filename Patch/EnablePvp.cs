@@ -3,30 +3,37 @@ using UnityEngine.SceneManagement;
 
 namespace ChallengeChest.Patch;
 
-[HarmonyPatch(typeof(Player), nameof(Player.Update)), HarmonyWrapSafe]
+[HarmonyPatch(typeof(Player), nameof(Player.Awake)), HarmonyWrapSafe]
 file static class EnablePvp
 {
     [HarmonyPostfix, UsedImplicitly]
-    private static void Postfix(Player __instance)
+    private static void Postfix(Player __instance) =>
+        __instance.StartCoroutine(Logic(__instance));
+
+    private static IEnumerator Logic(Player __instance)
     {
-        var pl = m_localPlayer;
-        if (__instance != pl) return;
-        if (!Minimap.instance) return;
-        if (!ForcePvp.Value) return;
-        if (SceneManager.GetActiveScene().name != "main") return;
-
-        if (pl.IsPVPEnabled()) return;
-        var pins = Minimap.instance.m_pins
-            .Where(p => EventData.Events.Select(x => x.Value.Icon).ToList().Contains(p.m_icon))
-            .Select(x=> (x.m_pos, EventData.Events.Values.ToList().Find(eventData => eventData.Icon.name == x.m_icon.name)))
-            .ToList();
-
-        foreach ((Vector3 pos, EventData data) pair in pins)
+        while (true)
         {
-            var distance = pl.transform.DistanceXZ(pair.pos);
-            if (distance > pair.data.Range + 20) continue;
-            pl.SetPVP(true);
-            return;
+            yield return new WaitForSeconds(3);
+            var pl = m_localPlayer;
+            if (__instance != pl) continue;
+            if (!Minimap.instance) continue;
+            if (!ForcePvp.Value) continue;
+            if (SceneManager.GetActiveScene().name != "main") continue;
+            if (pl.IsPVPEnabled()) continue;
+            var pinPoss = Minimap.instance.m_pins
+                .Where(p => EventData.Icons.Values.Contains(p.m_icon))
+                .Select(x => x.m_pos)
+                .ToList();
+
+            foreach (var pos in pinPoss)
+            {
+                if (pl.IsPVPEnabled()) continue;
+                var distance = pl.transform.DistanceXZ(pos);
+                if (distance > EventData.Range + 20) continue;
+                pl.SetPVP(true);
+            }
         }
+        // ReSharper disable once IteratorNeverReturns
     }
 }

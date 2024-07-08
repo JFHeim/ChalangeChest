@@ -14,20 +14,30 @@ public static class RegisterPrefabs
     {
         if (!bundle)
         {
-            var path = Path.Combine(Paths.PluginPath, $"{ModName}_Assets", $"{ModName.ToLower()}.bundle");
-            if (!File.Exists(path))
-            {
-                GetPlugin().Logger.LogFatal($"No asset bundle found! Should be at {path}");
-                return;
-            }
+            // var path = Path.Combine(Paths.PluginPath, $"{ModName}_Assets", $"{ModName.ToLower()}.bundle");
+            // if (!File.Exists(path))
+            // {
+            //     GetPlugin().Logger.LogFatal($"No asset bundle found! Should be at {path}");
+            //     return;
+            // }
+            //
+            // bundle = AssetBundle.LoadFromFile(path);
 
-            bundle = AssetBundle.LoadFromFile(path);
+            LoadAssetBundle(ModName.ToLower());
         }
 
         Assets.Clear();
         Assets.AddRange(bundle.LoadAllAssets());
         foreach (var name in Assets) Debug($"Registering {name}");
-        foreach (var obj in Assets.Where(o => o is Sprite)) Sprites.Add(obj as Sprite);
+        foreach (var obj in Assets.Where(o => o is Texture2D))
+        {
+            var texture2D = (obj as Texture2D)!;
+            var sprite = UnityEngine.Sprite.Create(texture2D,
+                new Rect(0, 0, texture2D.width, texture2D.height), Vector2.zero);
+            sprite.name = obj.name;
+            Sprites.Add(sprite);
+        }
+
         foreach (var obj in Assets.Where(o => o is GameObject)) Prefabs.Add(obj as GameObject);
     }
 

@@ -57,9 +57,6 @@
         <Reference Include="BepInEx">
             <HintPath>$(BEPINEX_PATH)/core/BepInEx.dll</HintPath>
         </Reference>
-        <Reference Include="BepInEx">
-            <HintPath>$(BEPINEX_PATH)/plugins\ESP.dll</HintPath>
-        </Reference>
         <Reference Include="UnityEngine">
             <HintPath>$(VALHEIM_INSTALL)/valheim_Data/Managed/UnityEngine.dll</HintPath>
         </Reference>
@@ -127,12 +124,12 @@
         <None Remove=".gitignore" />
         <None Remove=".gitattributes" />
         <None Remove="LICENSE" />
-        <None Remove="challengechest.bundle" />
     </ItemGroup>
 
     <ItemGroup>
       <None Remove="challengechest" />
       <None Remove="translations\English.yml" />
+      <EmbeddedResource Include="challengechest" />
       <EmbeddedResource Include="translations\English.yml">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </EmbeddedResource>

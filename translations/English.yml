@@ -1,3 +1,4 @@
 cc_none: "none"
 cc_chest_title: "Award awaits the strong"
 cc_next_event_spawn: "Next challenge chest: $1"
+cc_min_players_online: "Players online to spawn next chest: {0}"

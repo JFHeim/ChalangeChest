@@ -1,3 +1,4 @@
 cc_none: "none"
 cc_chest_title: "Награда ждёт сильного"
 cc_next_event_spawn: "Следующий сундук-испытание: $1"
+cc_min_players_online: "Игроков онлайн для появления сундука-испытания: {0}"

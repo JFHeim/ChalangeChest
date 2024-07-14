@@ -2,6 +2,7 @@
     <PropertyGroup>
         <VALHEIM_INSTALL>/home/jf/.local/share/Steam/steamapps/common/Valheim/</VALHEIM_INSTALL>
         <BEPINEX_PATH>/home/jf/.local/share/Steam/steamapps/common/Valheim/BepInEx/</BEPINEX_PATH>
+        <Server_Plugins_PATH>/home/jf/.local/share/Steam/steamapps/common/Valheim dedicated server/BepInEx/plugins/</Server_Plugins_PATH>
 
         <TargetFramework>net48</TargetFramework>
         <RootNamespace>ChallengeChest</RootNamespace>
@@ -112,6 +113,9 @@
         <Reference Include="JFUtils">
             <HintPath>../Utils/JFUtils.dll</HintPath>
         </Reference>
+        <Reference Include="fastJSON">
+            <HintPath>../Utils/fastJSON.dll</HintPath>
+        </Reference>
     </ItemGroup>
 
     <ItemGroup>
@@ -143,6 +147,7 @@
     <Target Name="CopyDLL" AfterTargets="ILRepack">
         <Copy SourceFiles="$(TargetDir)$(ProjectName).dll" DestinationFolder="../_Publish/Frogger-$(ProjectName)"/>
         <Copy SourceFiles="$(TargetDir)$(ProjectName).dll" DestinationFolder="$(BEPINEX_PATH)/plugins"/>
-        <Message Importance="high" Text="Copied $(ProjectName).dll to ../_Publish and $(BEPINEX_PATH)plugins"/>
+        <Copy SourceFiles="$(TargetDir)$(ProjectName).dll" DestinationFolder="$(Server_Plugins_PATH)"/>
+        <Message Importance="high" Text="Copied $(ProjectName).dll plugins"/>
     </Target>
 </Project>

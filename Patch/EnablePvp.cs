@@ -22,7 +22,7 @@ file static class EnablePvp
             if (SceneManager.GetActiveScene().name != "main") continue;
             if (pl.IsPVPEnabled()) continue;
             var pinPoss = Minimap.instance.m_pins
-                .Where(p => EventData.Icons.Values.Contains(p.m_icon))
+                .Where(p => EventSetup.Icons.Values.Contains(p.m_icon))
                 .Select(x => x.m_pos)
                 .ToList();
 
@@ -30,7 +30,7 @@ file static class EnablePvp
             {
                 if (pl.IsPVPEnabled()) continue;
                 var distance = pl.transform.DistanceXZ(pos);
-                if (distance > EventData.Range + 20) continue;
+                if (distance > EventSetup.Range + 20) continue;
                 pl.SetPVP(true);
             }
         }

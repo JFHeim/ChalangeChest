@@ -10,8 +10,8 @@ file static class EventDespawnAndSpawn
     [HarmonyPostfix, UsedImplicitly]
     private static void Postfix(ZoneSystem __instance)
     {
-        if (!EventData.locationReference.m_name.IsGood())
-            EventData.locationReference = AddLoadedSoftReferenceAsset(EventData.Prefab);
+        if (!EventSetup.locationReference.m_name.IsGood())
+            EventSetup.locationReference = AddLoadedSoftReferenceAsset(EventSetup.Prefab);
 
         if (!ZNet.instance.IsServer()) return;
 
@@ -27,6 +27,7 @@ file static class EventDespawnAndSpawn
                 if (EventSpawnTimer.Value <= 0)
                 {
                     yield return new WaitForSeconds(1);
+                    DebugError($"EventSpawnTimer <= 0. Waiting for value to be > 0");
                     continue;
                 }
 
@@ -37,6 +38,7 @@ file static class EventDespawnAndSpawn
                     yield return CheckDespawnEnumerator();
                     yield return new WaitForSeconds(1);
                     oldRemainingTime = remainingTime;
+                    if (ZNet.instance.m_players.Count < MinimumPlayersOnline.Value) continue;
                     if (EventSpawnTimer.Value > 0)
                     {
                         remainingTime = EventSpawnTimer.Value * 60 - (int)ZNet.instance.GetTimeSeconds() %

@@ -5,6 +5,7 @@
         <ItemGroup>
             <InputAssemblies Include="$(TargetPath)"/>
             <InputAssemblies Include="..\Utils\JFUtils.dll"/>
+            <InputAssemblies Include="..\Utils\fastJSON.dll"/>
             <InputAssemblies Include="$(OutputPath)YamlDotNet.dll"/>
         </ItemGroup>
         <ILRepack Parallel="true" DebugInfo="true" Internalize="true" InputAssemblies="@(InputAssemblies)"

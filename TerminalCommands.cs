@@ -1,5 +1,4 @@
-﻿using ChallengeChest.Patch;
-using HarmonyLib;
+﻿using HarmonyLib;
 
 // ReSharper disable VariableHidesOuterVariable ObjectCreationAsStatement
 
@@ -37,7 +36,7 @@ public static class TerminalCommands
             {
                 if (!IsAdmin) throw new ConsoleCommandException("You are not an admin on this server");
 
-                EventSpawn.HandleChallengeDone(m_localPlayer.transform.position.GetZone());
+                EventSpawn.HandleChallengeDone(m_localPlayer.transform.position.ToV2());
 
                 args.Context.AddString("Done");
             }, args), true);

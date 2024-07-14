@@ -20,6 +20,7 @@ public static class TheConfig
     public static ConfigEntry<int> MapDisplayOffset { get; private set; }
     public static ConfigEntry<bool> EventMobDrop { get; private set; }
     public static ConfigEntry<bool> ForcePvp { get; private set; }
+    public static ConfigEntry<int> MinimumPlayersOnline { get; private set; }
 
     private static readonly Dictionary<(Biome, Difficulty), ConfigEntry<string>> ChestDrops = [];
 
@@ -33,6 +34,11 @@ public static class TheConfig
             new ConfigDescription("Interval between ChallengeChest spawns. In minutes",
                 new AcceptableValueRange<int>(1, 10080),
                 new ConfigurationManagerAttributes { Order = --order, CustomDrawer = DrawTime }));
+
+        MinimumPlayersOnline = config("General", "MinimumPlayersOnline", 3,
+            new ConfigDescription("Minimum number of players online ChallengeChest event to spawn",
+                new AcceptableValueRange<int>(1, 10),
+                new ConfigurationManagerAttributes { Order = --order }));
 
         EventMobDrop = config("General", "Event mobs drop loot", false,
             new ConfigDescription("Should ChallengeChest mobs drop loot",
@@ -140,7 +146,7 @@ public static class TheConfig
                                "Tick:2:6:0.7:1:3," +
                                "SeekerBrute:2:6:1:1:3," +
                                "Gjall:1:1:0.6",
-            // Heightmap.Biome.DeepNorth => throw new NotImplementedException(),
+            // Biome.DeepNorth => "",
             Biome.All => "Boar:1:1:1:1:1",
             _ => ""
         };

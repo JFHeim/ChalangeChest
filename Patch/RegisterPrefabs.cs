@@ -1,5 +1,4 @@
-﻿using BepInEx;
-using HarmonyLib;
+﻿using HarmonyLib;
 using static ChallengeChest.Patch.RegisterPrefabs;
 
 namespace ChallengeChest.Patch;

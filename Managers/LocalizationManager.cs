@@ -72,16 +72,18 @@ public class Localizer
             PlaceholderProcessors[key] = new Dictionary<string, Func<string>>();
         }
 
-        void UpdatePlaceholder()
-        {
-            PlaceholderProcessors[key][placeholder] = () => convertConfigValue(config.Value);
-            UpdatePlaceholderText(Localization.instance, key);
-        }
-
         config.SettingChanged += (_, _) => UpdatePlaceholder();
         if (LoadedTexts.ContainsKey(Localization.instance.GetSelectedLanguage()))
         {
             UpdatePlaceholder();
+        }
+
+        return;
+
+        void UpdatePlaceholder()
+        {
+            PlaceholderProcessors[key][placeholder] = () => convertConfigValue(config.Value);
+            UpdatePlaceholderText(Localization.instance, key);
         }
     }
 

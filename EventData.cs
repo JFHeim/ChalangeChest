@@ -1,45 +1,37 @@
-using ChallengeChest.Patch;
-using SoftReferenceableAssets;
-
 namespace ChallengeChest;
 
-public static class EventData
+[Serializable]
+public class EventData
 {
-    public const string PrefabName = "cc_EventPrefab";
-    public static GameObject Prefab;
-    public static SoftReference<GameObject> locationReference = new();
-    public static Location Location;
-    public static readonly Dictionary<Heightmap.Biome, Sprite> Icons = [];
-    public static float Range = 30;
+    public Difficulty difficulty;
+    public SimpleVector2 pos;
+    public long despawnTime;
+    public SimpleVector2 zone;
 
-    public static void Init()
+    public EventData(Difficulty difficulty, SimpleVector2 pos, SimpleVector2 zone, long despawnTime) : this()
     {
-        Debug("Initializing EventData...");
-        Prefab = RegisterPrefabs.Prefab(PrefabName);
-        Location = Prefab.GetComponent<Location>();
-        Range = Location?.GetMaxRadius() ?? 10f;
-        SetupIcons();
-
-        Debug("Initialized EventData");
+        this.difficulty = difficulty;
+        this.pos = pos;
+        this.zone = zone;
+        this.despawnTime = despawnTime;
     }
 
-    private static void SetupIcons()
+    public EventData()
     {
-        AddIcon(Heightmap.Biome.Meadows);
-        AddIcon(Heightmap.Biome.Swamp);
-        AddIcon(Heightmap.Biome.Mountain);
-        AddIcon(Heightmap.Biome.BlackForest);
-        AddIcon(Heightmap.Biome.Plains);
-        AddIcon(Heightmap.Biome.AshLands);
-        AddIcon(Heightmap.Biome.DeepNorth);
-        AddIcon(Heightmap.Biome.Ocean);
-        AddIcon(Heightmap.Biome.Mistlands);
-        return;
+    }
 
-        void AddIcon(Heightmap.Biome biome)
-        {
-            var spriteName = $"cc_Icon{biome.ToString()}";
-            Icons.Add(biome, RegisterPrefabs.Sprite(spriteName));
-        }
+    public Heightmap.Biome GetBiome() => WorldGenerator.instance.GetBiome(pos.x, pos.y);
+    public Vector2i GetZone() => new(zone.ToVector2());
+    public Vector2i GetZoneTrue() => zone.ToVector2().ToV3().GetZone();
+
+    public override string ToString()
+    {
+        return
+            $"{nameof(difficulty)}: {difficulty}, " +
+            $"{nameof(pos)}: {pos}, " +
+            $"{nameof(despawnTime)}: {despawnTime}, " +
+            $"{nameof(zone)}: {zone}, " +
+            $"{nameof(GetZone)}: {GetZone()}, " +
+            $"{nameof(GetZoneTrue)}: {GetZoneTrue()}";
     }
 }

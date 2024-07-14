@@ -10,7 +10,7 @@ file static class MinimapLabel
     [HarmonyPostfix, UsedImplicitly]
     private static void Postfix(Minimap __instance)
     {
-        foreach (var pair in EventData.Icons)
+        foreach (var pair in EventSetup.Icons)
         {
             __instance.m_locationIcons.Add(new Minimap.LocationSpriteData
                 { m_icon = pair.Value, m_name = pair.Value.name });
@@ -36,17 +36,24 @@ file static class MinimapLabel
                 if (EventSpawnTimer.Value <= 0) yield return new WaitForSeconds(1);
                 else
                 {
-                    var nextBossSpawn = EventSpawnTimer.Value * 60 -
-                                        (int)ZNet.instance.GetTimeSeconds() % (EventSpawnTimer.Value * 60) - 1;
-                    var timeSpan = TimeSpan.FromSeconds(nextBossSpawn);
-                    bossTimer.text = Localization.instance.Localize("$cc_next_event_spawn",
-                        timeSpan.ToHumanReadableString());
+                    if (ZNet.instance.m_players.Count < MinimumPlayersOnline.Value)
+                        bossTimer.text = string.Format("$cc_min_players_online".Localize(), MinimumPlayersOnline.Value);
+                    else
+                    {
+                        var nextBossSpawn = EventSpawnTimer.Value * 60 -
+                                            (int)ZNet.instance.GetTimeSeconds() % (EventSpawnTimer.Value * 60) - 1;
+                        var timeSpan = TimeSpan.FromSeconds(nextBossSpawn);
+                        bossTimer.text = Localization.instance.Localize("$cc_next_event_spawn",
+                            timeSpan.ToHumanReadableString());
+                    }
 
                     foreach (var pin in __instance.m_pins
-                                 .Where(p => EventData.Icons.Values.Contains(p.m_icon)))
+                                 .Where(p => EventSetup.Icons.Values.Contains(p.m_icon)))
                     {
                         pin.m_name = TimeSpan.FromSeconds((int)pin.m_pos.y - (int)ZNet.instance.GetTimeSeconds())
                             .ToString("c");
+
+
                         if (pin.m_NamePinData is null)
                         {
                             pin.m_NamePinData = new Minimap.PinNameData(pin);
@@ -73,7 +80,7 @@ file static class ShowMinimapIcon
         for (var i = 0; i < icons.Count; i++)
         {
             var icon = icons.ElementAt(i);
-            if (icon.Value != EventData.PrefabName) continue;
+            if (icon.Value != EventSetup.PrefabName) continue;
             var location = ZoneSystem.instance.m_locationInstances.Values.ToList().Find(x => x.m_position == icon.Key);
             if (location.m_location == null || location.m_position == default) continue;
             icons[icon.Key] = location.m_location.m_prefabName;

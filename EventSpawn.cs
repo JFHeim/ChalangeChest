@@ -1,5 +1,4 @@
-﻿using fastJSON;
-using HarmonyLib;
+﻿using HarmonyLib;
 using static Utils;
 
 namespace ChallengeChest;
@@ -21,7 +20,7 @@ public class EventSpawn
 
     public static void BroadcastMinimapUpdate()
     {
-        Debug($"BroadcastMinimapUpdate");
+        Debug("BroadcastMinimapUpdate");
         ZoneSystem.instance.SendLocationIcons(ZRoutedRpc.Everybody);
         if (!Minimap.instance) return;
         Minimap.instance.UpdateLocationPins(10);
@@ -120,24 +119,9 @@ public class EventSpawn
         }
     }
 
-    public static void LoadEventData()
-    {
-        var defaultValue = JSON.ToJSON(new List<EventData>());
-        var json = ZoneSystem.instance.GetOrAddGlobalKey($"{ModName}_Events", defaultValue);
-        EventDatas = JSON.ToObject<List<EventData>>(json);
-        Debug($"SaveEventData Count={EventDatas.Count}");
-    }
-
-    public static void SaveEventData()
-    {
-        Debug($"SaveEventData Count={EventDatas.Count}");
-        ZoneSystem.instance.SetGlobalKey($"{ModName}_Events", JSON.ToJSON(EventDatas));
-    }
-
     private static void AddEventData(Difficulty difficulty, SimpleVector2 pos, SimpleVector2 zone, long despawnTime)
     {
         EventDatas.Add(new EventData(difficulty, pos, zone, despawnTime));
-        SaveEventData();
     }
 
     private static Vector3? GetRandomSpawnPoint()
@@ -221,21 +205,20 @@ public class EventSpawn
         // var vector2I = ZoneSystem.instance.m_locationInstances.Keys.ToList().Find(x => x.Equals(data.GetZone()));
         ZoneSystem.instance.m_locationInstances.Remove(data.GetZone());
         EventDatas.Remove(data);
-        SaveEventData();
         BroadcastMinimapUpdate();
         ZoneSystem.instance.StartCoroutine(CheckDespawnEnumerator());
 
         // var eventPos = new Vector3(location.m_position.x,
         //     WorldGenerator.instance.GetHeight(location.m_position.x, location.m_position.z), location.m_position.z);
 
-        Debug($"HandleChallengeDone 7");
+        Debug("HandleChallengeDone 7");
         if (!ZNet.instance.IsServer()) return;
         var zdos = (await ZoneSystem.instance.GetWorldObjectsAsync(zdo =>
             {
                 var mobEventPos = zdo.GetVec3("ChallengeChestPos", Vector3.zero).ToV2();
                 return mobEventPos != Vector2.zero;
             })).Select(zdo =>
-                (zdo: zdo, eventPos: zdo.GetVec3("ChallengeChestPos", Vector3.zero).ToV2().ToSimpleVector2()))
+                (zdo, eventPos: zdo.GetVec3("ChallengeChestPos", Vector3.zero).ToV2().ToSimpleVector2()))
             .ToList();
         Debug($"HandleChallengeDone 8 zdos={zdos.GetString()}");
         zdos = zdos.Where(x => x.eventPos.Equals(data.pos, 4)).ToList();
@@ -280,11 +263,15 @@ public class EventSpawn
             .Where(p => EventSetup.Icons.Values.Any(x => x.name == p.m_location.m_prefabName))
             .Select(x => (pos: x.m_position.RoundCords(), location: x.m_location))
             .ToList();
+
+        if (allLocations.Count <= 0) yield break;
+
         var locationsToRemove = allLocations
             .Where(p => p.pos.y < 1 + (int)ZNet.instance.GetTimeSeconds())
             .Select(pair => pair.pos)
             .Select(pos => (pos, data: EventDatas.Find(d => d.pos.Equals(pos.ToV2(), 4))))
             .ToList();
+
 
         Debug($"CheckDespawnEnumerator, Found a " +
               $"total of !{allLocations.Count}! locations and " +
@@ -306,7 +293,6 @@ public class EventSpawn
             ZoneSystem.instance.m_locationInstances.Remove(zone);
             if (info.data is not null) EventDatas.Remove(info.data);
             if (!ZNet.instance.IsServer()) continue;
-            SaveEventData();
             if (info.data is null) continue;
             LoadLocationZdos(info.data);
             yield return new WaitUntil(() => zdosLoaded);

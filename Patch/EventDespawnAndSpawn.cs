@@ -27,7 +27,7 @@ file static class EventDespawnAndSpawn
                 if (EventSpawnTimer.Value <= 0)
                 {
                     yield return new WaitForSeconds(1);
-                    DebugError($"EventSpawnTimer <= 0. Waiting for value to be > 0");
+                    DebugError("EventSpawnTimer <= 0. Waiting for value to be > 0");
                     continue;
                 }
 

@@ -21,6 +21,8 @@ public static class TheConfig
     public static ConfigEntry<bool> EventMobDrop { get; private set; }
     public static ConfigEntry<bool> ForcePvp { get; private set; }
     public static ConfigEntry<int> MinimumPlayersOnline { get; private set; }
+    public static ConfigEntry<string> BiomesToSpawn { get; private set; }
+    public static ConfigEntry<bool> CanSpawnInOtherLocation { get; private set; }
 
     private static readonly Dictionary<(Biome, Difficulty), ConfigEntry<string>> ChestDrops = [];
 
@@ -59,6 +61,20 @@ public static class TheConfig
         ForcePvp = config("General", "ForcePvp", true,
             new ConfigDescription("Force Pvp in ChallengeChest area", null,
                 new ConfigurationManagerAttributes { Order = --order }));
+        CanSpawnInOtherLocation = config("General", "CanSpawnInOtherLocation", false,
+            new ConfigDescription("If true, ChallengeChest can spawn in zones where some locations exists", null,
+                new ConfigurationManagerAttributes { Order = --order }));
+
+        var allBiomes = Enum.GetValues(typeof(Biome))
+            .Cast<Biome>()
+            .Where(x => x != Biome.None && x != Biome.All)
+            .Select(x => x.ToString())
+            .ToArray();
+        BiomesToSpawn = config("General", "BiomeToSpawn", allBiomes.GetString(","),
+            new ConfigDescription("List of biomes where ChallengeChest can spawn\n" +
+                                  $"Available biomes: {allBiomes.GetString()}",
+                null,
+                new ConfigurationManagerAttributes { Order = --order, CustomDrawer = DrawBiomesToSpawn }));
 
         MapDisplayOffset = config("Visual", "Countdown Display Offset - Label on map", 0,
             new ConfigDescription("Offset for the world boss countdown display on the world map. " +
@@ -80,7 +96,10 @@ public static class TheConfig
                 ChestDrops.Add((biome, difficulty), config(category,
                     $"{difficultyName} - Chest Drops", GetDefaultDrops(biome, difficulty),
                     new ConfigDescription(
-                        "This items will be in chest", null,
+                        "This items will be in chest\n" +
+                        "Format: {PrefabName:AmountMin:AmountMax:ChanceToSpawnAny}\n" +
+                        "Separate different items with comma ','\n" +
+                        "Default values: AmountMin=1, AmountMax=1, ChanceToSpawnAny=1.0", null,
                         new ConfigurationManagerAttributes { CustomDrawer = DrawChestItems, Order = --order })));
 
                 HidedChestDrops.Add((biome, difficulty));
@@ -88,7 +107,11 @@ public static class TheConfig
                 EventMobs.Add((biome, difficulty), config(category,
                     $"{difficultyName} - Event Mobs", GetDefaultMobs(biome, difficulty),
                     new ConfigDescription(
-                        "These mobs will be spawned\nLevel: 1 = no star, 2 = 1 star, 3 = 2 stars", null,
+                        "These mobs will be spawned\n" +
+                        "Level: 1 = no star, 2 = 1 star, 3 = 2 stars\n" +
+                        "Format: {PrefabName:AmountMin:AmountMax:ChanceToSpawnAny:LevelMin:LevelMax}\n" +
+                        "Separate different mobs with comma ','\n" +
+                        "Default values: AmountMin=1, AmountMax=1, ChanceToSpawnAny=1.0, LevelMin=1, LevelMax=2", null,
                         new ConfigurationManagerAttributes { CustomDrawer = DrawEventMobs, Order = --order })));
                 HidedEventMobs.Add((biome, difficulty));
             }
@@ -206,6 +229,56 @@ public static class TheConfig
         GUILayout.EndHorizontal();
 
         if (wasUpdated) cfg.BoxedValue = (int)float.Parse(result);
+    }
+
+    private static void DrawBiomesToSpawn(ConfigEntryBase cfg)
+    {
+        var locked = cfg.Description.Tags
+            .Select(a =>
+                a.GetType().Name == "ConfigurationManagerAttributes"
+                    ? (bool?)a.GetType().GetField("ReadOnly")?.GetValue(a)
+                    : null).FirstOrDefault(v => v != null) ?? false;
+
+        // ReSharper disable once RedundantAssignment
+        var wasUpdated = false;
+        var allBiomes = Enum.GetValues(typeof(Biome))
+            .Cast<Biome>()
+            .Where(x => x != Biome.None && x != Biome.All)
+            .Select(x => x.ToString())
+            .ToArray();
+        var biomesList = cfg.BoxedValue.ToString().Split(',').ToList();
+
+        GUILayout.BeginHorizontal();
+
+        var oldValue = biomesList.GetString(",");
+
+        var biomeValues = new Dictionary<string, bool>();
+
+        GUILayout.BeginVertical();
+        for (var i = 0; i < allBiomes.Length; i++)
+        {
+            var biome = allBiomes[i];
+            if (i % 3 == 0)
+            {
+                GUILayout.EndVertical();
+                GUILayout.BeginVertical();
+            }
+
+            biomeValues[biome] = GUILayout.Toggle(biomesList.Contains(biome), biome);
+        }
+
+        GUILayout.EndVertical();
+
+        var newValue = biomeValues
+            .Where(x => x.Value)
+            .Select(x => x.Key)
+            .ToList().GetString(",");
+        var result = locked ? oldValue : newValue;
+        wasUpdated = result != oldValue;
+
+        GUILayout.EndHorizontal();
+
+        if (wasUpdated) cfg.BoxedValue = result;
     }
 
     private static void DrawChestItems(ConfigEntryBase cfg)

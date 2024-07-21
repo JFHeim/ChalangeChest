@@ -126,10 +126,18 @@ public class EventSpawn
 
     private static Vector3? GetRandomSpawnPoint()
     {
+        var tries = 0;
         for (var i = 0; i < 10000; ++i)
         {
             retry:
-            Debug("GetRandomSpawnPoint 1 retry");
+            tries++;
+            Debug($"GetRandomSpawnPoint 1 retry tries={tries}");
+            if (tries > 100)
+            {
+                DebugError("GetRandomSpawnPoint failed, too many tries");
+                return null;
+            }
+
             var randomPoint = Random.insideUnitCircle * SpawnMaxDistance.Value;
             Vector3 point = new(randomPoint.x, 0, randomPoint.y);
 
@@ -137,6 +145,7 @@ public class EventSpawn
 
             Debug("GetRandomSpawnPoint 2");
             var biome = WorldGenerator.instance.GetBiome(point.x, point.z);
+            if (!BiomesToSpawn.Value.Split(',').Contains(biome.ToString())) continue;
             var biomeHeight = WorldGenerator.instance.GetBiomeHeight(biome, point.x, point.z, out _);
             var forestFactor = Minimap.instance.GetMaskColor(point.x, point.z, biomeHeight, biome).r;
 
@@ -148,15 +157,17 @@ public class EventSpawn
             var baseValue = 0;
             var sector = ZoneSystem.instance.GetZone(point);
 
-            if (ZoneSystem.instance.m_locationInstances.ContainsKey(sector)) continue;
+            // may be commented ...
+            if (!CanSpawnInOtherLocation.Value && ZoneSystem.instance.m_locationInstances.ContainsKey(sector)) continue;
 
             Debug("GetRandomSpawnPoint 4");
             for (var j = 0; j < 10; ++j)
             {
                 var circle = Random.insideUnitCircle * j;
-                if (Mathf.Abs(biomeHeight -
-                              WorldGenerator.instance.GetBiomeHeight(biome, point.x + circle.x, point.z + circle.y,
-                                  out _)) > 5) goto retry;
+                var j_biomeHeight =
+                    WorldGenerator.instance.GetBiomeHeight(biome, point.x + circle.x, point.z + circle.y, out _);
+                var heightDelta = Mathf.Abs(biomeHeight - j_biomeHeight);
+                if (heightDelta > 5) goto retry;
             }
 
             Debug("GetRandomSpawnPoint 5");
@@ -182,7 +193,7 @@ public class EventSpawn
             return point.RoundCords() with { y = WorldGenerator.instance.GetHeight(point.x, point.z) };
         }
 
-        Debug("GetRandomSpawnPoint finish");
+        Debug("GetRandomSpawnPoint finished with no result");
         return null;
     }
 
@@ -273,10 +284,10 @@ public class EventSpawn
             .ToList();
 
 
+        if (locationsToRemove.Count <= 0) yield break;
         Debug($"CheckDespawnEnumerator, Found a " +
               $"total of !{allLocations.Count}! locations and " +
               $"!{locationsToRemove.Count}! locations to remove");
-        if (locationsToRemove.Count <= 0) yield break;
 
         foreach (var info in locationsToRemove)
         {

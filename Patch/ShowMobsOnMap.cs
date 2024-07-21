@@ -46,18 +46,14 @@ file static class ShowMobsOnMap
         if (!map) return;
         if (!icon) icon = RegisterPrefabs.Sprite("cc_IconChest");
 
-        // foreach (var eventPin in map.m_pins.Where(p => EventSetup.Icons.Values.Contains(p.m_icon)))
-        // {
-        //     if (eventPin.m_pos.DistanceXZ(m_localPlayer.transform.position) > EventSetup.Range + 80) continue;
-        //     Debug($"ShowMobsOnMap 4");
-
         foreach (var mob in Character.s_characters)
         {
-            if (mob.m_nview.GetZDO().GetVec3("ChallengeChestPos", Vector3.zero) == Vector3.zero) continue;
+            var vector3 = mob?.m_nview?.GetZDO()?.GetVec3("ChallengeChestPos", Vector3.zero) ?? Vector3.zero;
+            if (vector3 == Vector3.zero) continue;
             var mobPin = new PinData
             {
                 m_type = Minimap.PinType.Boss,
-                m_pos = mob.transform.position,
+                m_pos = mob!.transform.position,
                 m_icon = icon,
                 m_animate = false,
                 m_save = false,
@@ -68,6 +64,7 @@ file static class ShowMobsOnMap
 
         foreach (var chest in chests)
         {
+            if (!chest) continue;
             var mobPin = new PinData
             {
                 m_type = Minimap.PinType.Boss,
@@ -80,12 +77,11 @@ file static class ShowMobsOnMap
             };
             _addedPinDatas.Add(mobPin);
         }
-        // }
 
         foreach (var pinData in _addedPinDatas) map.m_pins.Add(pinData);
         foreach (var pin in _oldPinDatas)
         {
-            if (pin.m_uiElement != null)
+            if (pin.m_uiElement)
             {
                 Destroy(pin.m_uiElement.gameObject);
                 pin.m_uiElement = null;
@@ -104,15 +100,7 @@ file static class ShowMobsOnMap
         _oldPinDatas = [.._addedPinDatas];
         if (_addedPinDatas.Count > 0) map.m_pinUpdateRequired = true;
         _addedPinDatas.Clear();
-    }
-
-    private static readonly bool _debug = true;
-
-    private static void Debug(object s)
-    {
-        if (!_debug) return;
-        ModBase.Debug(s);
-    }
+    }   
 }
 
 [HarmonyPatch(typeof(Container))]

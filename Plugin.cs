@@ -10,7 +10,7 @@ internal class Plugin : BaseUnityPlugin
 {
     private const string ModName = "ChallengeChest",
         ModAuthor = "Frogger",
-        ModVersion = "0.1.6",
+        ModVersion = "0.1.7",
         ModGuid = $"com.{ModAuthor}.{ModName}";
 
     public static readonly int VFXHash = "vfx_Place_workbench".GetStableHashCode();

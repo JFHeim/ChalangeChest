@@ -11,7 +11,26 @@ public static class TerminalCommands
     [HarmonyPostfix]
     private static void AddCommands()
     {
-        new Terminal.ConsoleCommand("startChallenge",
+        new Terminal.ConsoleCommand(ModName,
+            "Info", args => RunCommand(args =>
+            {
+                args.Context.AddString($"{ModName} by {ModAuthor} v{ModVersion}");
+                args.Context.AddString($"Available commands:");
+
+                foreach (var commandName in new List<string>
+                         {
+                             ModName.ToLower(), "startchallenge", "startchallengehere", "finishchallengehere",
+                             "finishchallengeall"
+                         })
+                {
+                    var command = Terminal.commands[commandName.ToLower()];
+                    args.Context.AddString($"\t{commandName.ToLower()} - {command.Description}");
+                }
+
+                args.Context.AddString("Done");
+            }, args), true);
+
+        new Terminal.ConsoleCommand("startchallenge",
             "Start the Challenge Chest at randomly generated position", args => RunCommand(args =>
             {
                 if (!IsAdmin) throw new ConsoleCommandException("You are not an admin on this server");
@@ -21,7 +40,7 @@ public static class TerminalCommands
                 args.Context.AddString("Done");
             }, args), true);
 
-        new Terminal.ConsoleCommand("startChallengehere",
+        new Terminal.ConsoleCommand("startchallengehere",
             "Start the Challenge Chest at current player position", args => RunCommand(args =>
             {
                 if (!IsAdmin) throw new ConsoleCommandException("You are not an admin on this server");
@@ -31,7 +50,23 @@ public static class TerminalCommands
                 args.Context.AddString("Done");
             }, args), true);
 
-        new Terminal.ConsoleCommand("finishChallengehere",
+        new Terminal.ConsoleCommand("finishchallengeall",
+            "Finish all Challenge Chests in world", args => RunCommand(args =>
+            {
+                if (!IsAdmin) throw new ConsoleCommandException("You are not an admin on this server");
+
+                while (EventSpawn.EventDatas.Count > 0)
+                {
+                    var data = EventSpawn.EventDatas.FirstOrDefault();
+                    if (data is null) break;
+
+                    EventSpawn.HandleChallengeDone(data.pos.ToVector2());
+                }
+
+                args.Context.AddString("Done");
+            }, args), true);
+
+        new Terminal.ConsoleCommand("finishchallengehere",
             "Finish the Challenge Chest in the current player zone/chunk/sector", args => RunCommand(args =>
             {
                 if (!IsAdmin) throw new ConsoleCommandException("You are not an admin on this server");

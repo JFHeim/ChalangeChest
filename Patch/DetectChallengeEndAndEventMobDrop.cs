@@ -25,8 +25,11 @@ file static class DetectChallengeEndAndEventMobDrop
 
     private static async void Logic(SimpleVector2 eventPos, Character itself)
     {
-        await Task.Delay(1000); // wait for mob zdo to be destroyed
         if (ModEnabled.Value == false) return;
+        
+        // wait for mob zdo to be destroyed
+        // random is needed to make mobs be processed in order and not in the same time
+        await Task.Delay(1000 + Random.Range(0, 600)); 
 
         var myEventMobsNearby = Character.GetAllCharacters()
             .Where(x => x != itself)
@@ -43,6 +46,6 @@ file static class DetectChallengeEndAndEventMobDrop
         if (myEventMobsNearby is { Count: > 0 }) return;
 
         Debug($"DetectChallengeEnd Calling HandleChallengeDone on pos={eventPos}");
-        EventSpawn.HandleChallengeDone(eventPos.ToVector2());
+        ZRoutedRpc.instance.InvokeRoutedRPC("cc_HandleChallengeDone", (double)eventPos.x, (double)eventPos.y);
     }
 }

@@ -122,23 +122,24 @@ public class EventSpawn
     private static void AddEventData(Difficulty difficulty, SimpleVector2 pos, SimpleVector2 zone, long despawnTime)
     {
         EventDatas.Add(new EventData(difficulty, pos, zone, despawnTime));
-        SendEventDataToClients();
+        if (ZNet.instance.IsServer()) SendEventDataToClients();
     }
 
     public static void SendEventDataToClients()
     {
         var package = new ZPackage();
-        package.Write(EventDatas.Count);
+        package.Write((int)EventDatas.Count);
         foreach (var data in EventDatas)
         {
             package.Write((int)data.difficulty);
-            package.Write(data.pos.x);
-            package.Write(data.pos.y);
-            package.Write(data.zone.x);
-            package.Write(data.zone.y);
+            package.Write((double)data.pos.x);
+            package.Write((double)data.pos.y);
+            package.Write((double)data.zone.x);
+            package.Write((double)data.zone.y);
             package.Write(data.despawnTime);
         }
 
+        Debug($"Sending EventData to clients EventDatas.Count={EventDatas.Count}");
         ZRoutedRpc.instance.InvokeRoutedRPC(ZRoutedRpc.Everybody, "cc_SyncEventData", package);
     }
 
@@ -146,6 +147,10 @@ public class EventSpawn
     {
         if (ZNet.instance.IsServer()) return;
         if (package is null) return;
+
+        Debug($"Receiving EventData from clients old EventDatas.Count={EventDatas.Count}");
+
+        EventDatas.Clear();
 
         var count = package.ReadInt();
         for (var i = 0; i < count; i++)
@@ -164,6 +169,8 @@ public class EventSpawn
             var despawnTime = package.ReadLong();
             AddEventData(difficulty, pos, zone, despawnTime);
         }
+
+        Debug($"Receiving EventData from clients new EventDatas.Count={EventDatas.Count}");
     }
 
     private static Vector3? GetRandomSpawnPoint()
@@ -239,6 +246,9 @@ public class EventSpawn
         return null;
     }
 
+    public static void HandleChallengeDone(long _, double x, double y) =>
+        HandleChallengeDone(new Vector2((float)x, (float)y));
+
     public static async void HandleChallengeDone(Vector2 eventPos)
     {
         if (!ZoneSystem.instance || ZoneSystem.instance.m_locationInstances is null) return;
@@ -258,6 +268,9 @@ public class EventSpawn
         // var vector2I = ZoneSystem.instance.m_locationInstances.Keys.ToList().Find(x => x.Equals(data.GetZone()));
         ZoneSystem.instance.m_locationInstances.Remove(data.GetZone());
         EventDatas.Remove(data);
+
+        if (!ZNet.instance.IsServer()) return;
+
         SendEventDataToClients();
         BroadcastMinimapUpdate();
         ZoneSystem.instance.StartCoroutine(CheckDespawnEnumerator());

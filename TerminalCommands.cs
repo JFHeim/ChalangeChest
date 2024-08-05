@@ -60,7 +60,9 @@ public static class TerminalCommands
                     var data = EventSpawn.EventDatas.FirstOrDefault();
                     if (data is null) break;
 
-                    EventSpawn.HandleChallengeDone(data.pos.ToVector2());
+                    var eventPos = data.pos.ToVector2();
+                    ZRoutedRpc.instance.InvokeRoutedRPC("cc_HandleChallengeDone",
+                        (double)eventPos.x, (double)eventPos.y);
                 }
 
                 args.Context.AddString("Done");
@@ -71,7 +73,8 @@ public static class TerminalCommands
             {
                 if (!IsAdmin) throw new ConsoleCommandException("You are not an admin on this server");
 
-                EventSpawn.HandleChallengeDone(m_localPlayer.transform.position.ToV2());
+                var pos = m_localPlayer.transform.position.ToV2();
+                ZRoutedRpc.instance.InvokeRoutedRPC("cc_HandleChallengeDone", (double)pos.x, (double)pos.y);
 
                 args.Context.AddString("Done");
             }, args), true);

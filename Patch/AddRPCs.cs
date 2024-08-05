@@ -10,5 +10,7 @@ file static class AddRPCs
     private static void Postfix()
     {
         ZRoutedRpc.instance.Register<ZPackage>("cc_SyncEventData", EventSpawn.ReceiveEventData);
+        ZRoutedRpc.instance.Register<double, double>("cc_HandleChallengeDone", EventSpawn.HandleChallengeDone);
+        // ZRoutedRpc.instance.Register<float, float>("cc_TimerUpdate", EventSpawn.HandleChallengeDone);
     }
 }

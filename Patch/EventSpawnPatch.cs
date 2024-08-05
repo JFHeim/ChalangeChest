@@ -9,6 +9,7 @@ file static class UpdateLocationIcons
     [HarmonyPostfix, UsedImplicitly]
     private static void Postfix()
     {
+        if (ModEnabled.Value == false) return;
         if (!Minimap.instance || m_localPlayer?.IsDead() != false) return;
         Minimap.instance.ForceUpdateLocationPins();
     }
@@ -21,6 +22,7 @@ file static class CachePrefabs
     private static async void Postfix(ZNetScene __instance)
     {
         PlayerBasePieces.Clear();
+        if (ModEnabled.Value == false) return;
         var prefabs = __instance.m_prefabs.Select(x => x).ToList();
         foreach (var prefab in prefabs)
         {

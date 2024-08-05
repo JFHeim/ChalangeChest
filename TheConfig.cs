@@ -12,6 +12,7 @@ public static class TheConfig
     private static readonly HashSet<(Biome biome, Difficulty difficulty)> HidedEventMobs = [];
     private static readonly HashSet<Biome> HidedEventBiomes = [];
 
+    public static ConfigEntry<bool> ModEnabled { get; private set; }
     public static ConfigEntry<int> EventSpawnTimer { get; private set; }
     public static ConfigEntry<int> SpawnMinDistance { get; private set; }
     public static ConfigEntry<int> SpawnMaxDistance { get; private set; }
@@ -31,6 +32,11 @@ public static class TheConfig
     public static void Init()
     {
         var order = 0;
+
+        ModEnabled = config("General", "ModEnabled", true,
+            new ConfigDescription("REQUIRES FULL RESTART",
+                null,
+                new ConfigurationManagerAttributes { Order = --order }));
 
         EventSpawnTimer = config("General", "EventSpawnTimer", 60,
             new ConfigDescription("Interval between ChallengeChest spawns. In minutes",

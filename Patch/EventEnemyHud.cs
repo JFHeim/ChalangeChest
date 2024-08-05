@@ -9,6 +9,7 @@ public class EventEnemyHud
     [HarmonyPostfix, UsedImplicitly]
     private static void Postfix(EnemyHud __instance)
     {
+        if (ModEnabled.Value == false) return;
         Debug("UpdateHuds 0");
         var huds = __instance.m_huds.Where(c =>
         {

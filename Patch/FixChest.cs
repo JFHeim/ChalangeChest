@@ -33,6 +33,7 @@ file static class ChestUnderground
     [HarmonyPostfix, UsedImplicitly]
     private static void Postfix(Container __instance)
     {
+        if (ModEnabled.Value == false) return;
         if (__instance.GetPrefabName() != "cc_SuccessChest_normal") return;
         __instance.StartCoroutine(CoroutineLogic(__instance));
     }
@@ -51,7 +52,7 @@ file static class ChestUnderground
     private static void Logic(Container container)
     {
         Debug($"ChestUnderground 0");
-        if (container.m_nview?.IsOwner() != true) return;  
+        if (container.m_nview?.IsOwner() != true) return;
         Debug($"ChestUnderground 1");
         var groundHeight = ZoneSystem.instance.GetGroundHeight(container.transform.position);
         Debug($"ChestUnderground 2");

@@ -12,7 +12,8 @@ file static class EventDespawnAndSpawn
     {
         if (!EventSetup.locationReference.m_name.IsGood())
             EventSetup.locationReference = AddLoadedSoftReferenceAsset(EventSetup.Prefab);
-
+        
+        if (ModEnabled.Value == false) return;
         if (!ZNet.instance.IsServer()) return;
 
         __instance.StartCoroutine(Check());
@@ -23,6 +24,7 @@ file static class EventDespawnAndSpawn
             while (ZoneSystem.instance)
             {
                 yield return new WaitForSeconds(5);
+                if (ModEnabled.Value == false) break;
 
                 if (EventSpawnTimer.Value <= 0)
                 {

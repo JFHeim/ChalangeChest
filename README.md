@@ -17,4 +17,4 @@ for each, you can customize mobs
 and loot in config
 
 generated config file is 1290 lines long, so I won't show it here, but you can find it on github
-[here](https://github.com/FroggerHH/ChalangeChest/blob/main/.github/com.Frogger.ChallengeChest.cfg)
+[here](https://github.com/FroggerHH/ChalangeChest/blob/main/.github/com.Frogger.ChallengeChest.cfg)     

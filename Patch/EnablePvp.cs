@@ -7,14 +7,18 @@ namespace ChallengeChest.Patch;
 file static class EnablePvp
 {
     [HarmonyPostfix, UsedImplicitly]
-    private static void Postfix(Player __instance) =>
+    private static void Postfix(Player __instance)
+    {
+        if (ModEnabled.Value == false) return;
         __instance.StartCoroutine(Logic(__instance));
+    }
 
     private static IEnumerator Logic(Player __instance)
     {
         while (true)
         {
             yield return new WaitForSeconds(3);
+            if (ModEnabled.Value == false) continue;
             var pl = m_localPlayer;
             if (__instance != pl) continue;
             if (!Minimap.instance) continue;

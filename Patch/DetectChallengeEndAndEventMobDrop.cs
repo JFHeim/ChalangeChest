@@ -8,6 +8,7 @@ file static class DetectChallengeEndAndEventMobDrop
     [HarmonyPrefix, UsedImplicitly]
     private static void Prefix(Character __instance)
     {
+        if (ModEnabled.Value == false) return;
         if (!__instance.m_nview.IsOwner()) return;
         var eventPos = __instance.m_nview.GetZDO().GetVec3("ChallengeChestPos", Vector3.zero).ToV2().ToSimpleVector2();
         if (eventPos is { x: 0, y: 0 }) return;
@@ -25,6 +26,7 @@ file static class DetectChallengeEndAndEventMobDrop
     private static async void Logic(SimpleVector2 eventPos, Character itself)
     {
         await Task.Delay(1000); // wait for mob zdo to be destroyed
+        if (ModEnabled.Value == false) return;
 
         var myEventMobsNearby = Character.GetAllCharacters()
             .Where(x => x != itself)

@@ -59,11 +59,11 @@ public class EventSpawn
         if (pos is null) return;
         Debug("SpawnBoss 3");
         var despawnTime = ZNet.instance.GetTime().AddMinutes(TimeLimit.Value).Ticks / 10000000L;
-        Debug("SpawnBoss 4");
+        Debug($"SpawnBoss 4 despawnTime={despawnTime}");
 
         Debug("SpawnBoss 5");
         var difficulty = Enum.GetValues(typeof(Difficulty)).Cast<Difficulty>().ToList().Random();
-        Debug("SpawnBoss 6");
+        Debug($"SpawnBoss 6 difficulty={difficulty}");
 
         AddLocationPin();
 
@@ -122,6 +122,48 @@ public class EventSpawn
     private static void AddEventData(Difficulty difficulty, SimpleVector2 pos, SimpleVector2 zone, long despawnTime)
     {
         EventDatas.Add(new EventData(difficulty, pos, zone, despawnTime));
+        SendEventDataToClients();
+    }
+
+    public static void SendEventDataToClients()
+    {
+        var package = new ZPackage();
+        package.Write(EventDatas.Count);
+        foreach (var data in EventDatas)
+        {
+            package.Write((int)data.difficulty);
+            package.Write(data.pos.x);
+            package.Write(data.pos.y);
+            package.Write(data.zone.x);
+            package.Write(data.zone.y);
+            package.Write(data.despawnTime);
+        }
+
+        ZRoutedRpc.instance.InvokeRoutedRPC(ZRoutedRpc.Everybody, "cc_SyncEventData", package);
+    }
+
+    public static void ReceiveEventData(long _, ZPackage package)
+    {
+        if (ZNet.instance.IsServer()) return;
+        if (package is null) return;
+
+        var count = package.ReadInt();
+        for (var i = 0; i < count; i++)
+        {
+            var difficulty = (Difficulty)package.ReadInt();
+            var pos = new SimpleVector2
+            {
+                x = (float)package.ReadDouble(),
+                y = (float)package.ReadDouble()
+            };
+            var zone = new SimpleVector2
+            {
+                x = (float)package.ReadDouble(),
+                y = (float)package.ReadDouble()
+            };
+            var despawnTime = package.ReadLong();
+            AddEventData(difficulty, pos, zone, despawnTime);
+        }
     }
 
     private static Vector3? GetRandomSpawnPoint()
@@ -216,6 +258,7 @@ public class EventSpawn
         // var vector2I = ZoneSystem.instance.m_locationInstances.Keys.ToList().Find(x => x.Equals(data.GetZone()));
         ZoneSystem.instance.m_locationInstances.Remove(data.GetZone());
         EventDatas.Remove(data);
+        SendEventDataToClients();
         BroadcastMinimapUpdate();
         ZoneSystem.instance.StartCoroutine(CheckDespawnEnumerator());
 
@@ -306,6 +349,7 @@ public class EventSpawn
             if (!ZNet.instance.IsServer()) continue;
             if (info.data is null) continue;
             LoadLocationZdos(info.data);
+            SendEventDataToClients();
             yield return new WaitUntil(() => zdosLoaded);
 
             Debug($"CheckDespawnEnumerator Found {zdos.Count} ZDOs in location {info} area");

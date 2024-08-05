@@ -8,6 +8,7 @@ file static class EventMobsStayInEventRange
     [HarmonyPostfix, UsedImplicitly]
     private static void Postfix(MonsterAI __instance)
     {
+        if (ModEnabled.Value == false) return;
         if (!__instance.m_nview.IsOwner()) return;
         var eventPos = __instance.m_nview.GetZDO().GetVec3("ChallengeChestPos", Vector3.zero);
         var isEvent = eventPos != Vector3.zero;

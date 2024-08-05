@@ -16,6 +16,7 @@ file static class ShowMobsOnMap
     [HarmonyPostfix, UsedImplicitly]
     private static void Postfix(Minimap __instance)
     {
+        if (ModEnabled.Value == false) return;
         __instance.StartCoroutine(CoroutineLogic());
     }
 
@@ -46,39 +47,43 @@ file static class ShowMobsOnMap
         if (!map) return;
         if (!icon) icon = RegisterPrefabs.Sprite("cc_IconChest");
 
-        foreach (var mob in Character.s_characters)
-        {
-            var vector3 = mob?.m_nview?.GetZDO()?.GetVec3("ChallengeChestPos", Vector3.zero) ?? Vector3.zero;
-            if (vector3 == Vector3.zero) continue;
-            var mobPin = new PinData
+        if (ModEnabled.Value)
+            foreach (var mob in Character.s_characters)
             {
-                m_type = Minimap.PinType.Boss,
-                m_pos = mob!.transform.position,
-                m_icon = icon,
-                m_animate = false,
-                m_save = false,
-                m_name = ""
-            };
-            _addedPinDatas.Add(mobPin);
-        }
+                var vector3 = mob?.m_nview?.GetZDO()?.GetVec3("ChallengeChestPos", Vector3.zero) ?? Vector3.zero;
+                if (vector3 == Vector3.zero) continue;
+                var mobPin = new PinData
+                {
+                    m_type = Minimap.PinType.Boss,
+                    m_pos = mob!.transform.position,
+                    m_icon = icon,
+                    m_animate = false,
+                    m_save = false,
+                    m_name = ""
+                };
+                _addedPinDatas.Add(mobPin);
+            }
 
-        foreach (var chest in chests)
-        {
-            if (!chest) continue;
-            var mobPin = new PinData
+        if (ModEnabled.Value)
+            foreach (var chest in chests)
             {
-                m_type = Minimap.PinType.Boss,
-                m_pos = chest.transform.position,
-                m_icon = icon,
-                m_animate = false,
-                m_save = false,
-                m_doubleSize = true,
-                m_name = "Chest"
-            };
-            _addedPinDatas.Add(mobPin);
-        }
+                if (!chest) continue;
+                var mobPin = new PinData
+                {
+                    m_type = Minimap.PinType.Boss,
+                    m_pos = chest.transform.position,
+                    m_icon = icon,
+                    m_animate = false,
+                    m_save = false,
+                    m_doubleSize = true,
+                    m_name = "Chest"
+                };
+                _addedPinDatas.Add(mobPin);
+            }
 
-        foreach (var pinData in _addedPinDatas) map.m_pins.Add(pinData);
+        if (ModEnabled.Value)
+            foreach (var pinData in _addedPinDatas) map.m_pins.Add(pinData);
+        
         foreach (var pin in _oldPinDatas)
         {
             if (pin.m_uiElement)
@@ -100,7 +105,7 @@ file static class ShowMobsOnMap
         _oldPinDatas = [.._addedPinDatas];
         if (_addedPinDatas.Count > 0) map.m_pinUpdateRequired = true;
         _addedPinDatas.Clear();
-    }   
+    }
 }
 
 [HarmonyPatch(typeof(Container))]

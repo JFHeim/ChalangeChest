@@ -35,7 +35,7 @@ public static class TerminalCommands
             {
                 if (!IsAdmin) throw new ConsoleCommandException("You are not an admin on this server");
 
-                EventSpawn.SpawnBoss();
+                ZRoutedRpc.instance.InvokeRoutedRPC("cc_SpawnBossTerminalNoPos");
 
                 args.Context.AddString("Done");
             }, args), true);
@@ -45,13 +45,14 @@ public static class TerminalCommands
             {
                 if (!IsAdmin) throw new ConsoleCommandException("You are not an admin on this server");
 
-                EventSpawn.SpawnBoss(m_localPlayer.transform.position.RoundCords());
+                var pos = m_localPlayer.transform.position.RoundCords();
+                ZRoutedRpc.instance.InvokeRoutedRPC("cc_SpawnBossTerminal", (double)pos.x, (double)pos.z);
 
                 args.Context.AddString("Done");
             }, args), true);
 
         new Terminal.ConsoleCommand("finishchallengeall",
-            "Finish all Challenge Chests in world", args => RunCommand(args =>
+            "Finish all Challenge Chests in world", args => RunCommand(async args =>
             {
                 if (!IsAdmin) throw new ConsoleCommandException("You are not an admin on this server");
 
@@ -60,9 +61,14 @@ public static class TerminalCommands
                     var data = EventSpawn.EventDatas.FirstOrDefault();
                     if (data is null) break;
 
+                    args.Context.AddString($"Processing event \"{data}\"");
+
                     var eventPos = data.pos.ToVector2();
-                    ZRoutedRpc.instance.InvokeRoutedRPC("cc_HandleChallengeDone",
-                        (double)eventPos.x, (double)eventPos.y);
+                    ZRoutedRpc.instance.InvokeRoutedRPC("cc_HandleChallengeDone", (double)eventPos.x,
+                        (double)eventPos.y);
+                    var oldCount = EventSpawn.EventDatas.Count;
+                    do await Task.Delay(100);
+                    while (EventSpawn.EventDatas.Count == oldCount);
                 }
 
                 args.Context.AddString("Done");

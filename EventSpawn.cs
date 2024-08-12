@@ -49,7 +49,7 @@ public class EventSpawn
 
     public static void SpawnBoss(Vector3? pos = null)
     {
-        Debug("SpawnBoss 0");
+        Debug($"SpawnBoss 0 pos={pos?.ToString() ?? "null"}");
         if (_lastBossSpawn == ZNet.instance.GetTime()) return;
         Debug("SpawnBoss 1");
         if (pos == null) pos = GetRandomSpawnPoint();
@@ -509,4 +509,8 @@ public class EventSpawn
 
         SnapToGround.SnappAll();
     }
+
+    public static void SpawnBoss(long _, double x, double z) => SpawnBoss(new Vector3((float)x, 0, (float)z));
+
+    public static void SpawnBoss(long _) => SpawnBoss(null);
 }

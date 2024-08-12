@@ -11,6 +11,8 @@ file static class AddRPCs
     {
         ZRoutedRpc.instance.Register<ZPackage>("cc_SyncEventData", EventSpawn.ReceiveEventData);
         ZRoutedRpc.instance.Register<double, double>("cc_HandleChallengeDone", EventSpawn.HandleChallengeDone);
+        ZRoutedRpc.instance.Register("cc_SpawnBossTerminalNoPos", EventSpawn.SpawnBoss);
+        ZRoutedRpc.instance.Register<double, double>("cc_SpawnBossTerminal", EventSpawn.SpawnBoss);
         // ZRoutedRpc.instance.Register<float, float>("cc_TimerUpdate", EventSpawn.HandleChallengeDone);
     }
 }

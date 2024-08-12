@@ -22,7 +22,7 @@ public class EventData
 
     public Heightmap.Biome GetBiome() => WorldGenerator.instance.GetBiome(pos.x, pos.y);
     public Vector2i GetZone() => new(zone.ToVector2());
-    public Vector2i GetZoneTrue() => zone.ToVector2().ToV3().GetZone();
+    public Vector2i GetZoneTrue() => pos.ToVector2().ToV3().GetZone();
 
     public override string ToString()
     {
